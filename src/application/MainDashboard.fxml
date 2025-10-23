@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.web.WebView?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="application.MainDashboardController" styleClass="dashboard-root">
+    
+    <!-- Barre supérieure avec alertes -->
+    <top>
+        <VBox>
+            <!-- Barre de titre et informations utilisateur -->
+            <HBox alignment="CENTER_LEFT" spacing="20" styleClass="top-bar">
+                <padding>
+                    <Insets top="10" bottom="10" left="20" right="20"/>
+                </padding>
+                
+                <Label text="Gestion des Formations et Écoles" styleClass="dashboard-title">
+                    <font>
+                        <Font name="System Bold" size="20"/>
+                    </font>
+                </Label>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <Label fx:id="lblUtilisateur" text="Utilisateur: Non connecté" styleClass="user-info">
+                    <font>
+                        <Font size="13"/>
+                    </font>
+                </Label>
+                
+                <Label fx:id="lblNiveauAcces" text="" styleClass="access-level">
+                    <font>
+                        <Font name="System Bold" size="13"/>
+                    </font>
+                </Label>
+                
+                <Button text="Déconnexion" onAction="#handleDeconnexion" styleClass="btn-logout">
+                    <font>
+                        <Font size="12"/>
+                    </font>
+                </Button>
+            </HBox>
+            
+            <!-- Barre d'alertes des retours -->
+            <HBox fx:id="alertBar" alignment="CENTER_LEFT" spacing="15" styleClass="alert-bar">
+                <padding>
+                    <Insets top="8" bottom="8" left="20" right="20"/>
+                </padding>
+                
+                <Label text="🔔 Alertes:" styleClass="alert-bar-label">
+                    <font>
+                        <Font name="System Bold" size="13"/>
+                    </font>
+                </Label>
+                
+                <ScrollPane fitToHeight="true" styleClass="alert-bar-scroll">
+                    <HBox fx:id="alertBarContainer" spacing="10" alignment="CENTER_LEFT">
+                        <padding>
+                            <Insets left="5" right="5"/>
+                        </padding>
+                    </HBox>
+                </ScrollPane>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- Menu latéral (Sidebar) -->
+    <left>
+        <VBox spacing="5" styleClass="sidebar">
+            <padding>
+                <Insets top="10" bottom="10" left="5" right="5"/>
+            </padding>
+            
+            <Label text="MENU" styleClass="sidebar-header">
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+                <padding>
+                    <Insets top="10" bottom="10" left="15" right="10"/>
+                </padding>
+            </Label>
+            
+            <Separator/>
+            
+            <!-- Boutons du menu -->
+            <Button fx:id="btnEmplacement" text="📍 Emplacement" onAction="#handleEmplacement" 
+                    styleClass="sidebar-btn, sidebar-btn-active" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="14"/>
+                </font>
+                <padding>
+                    <Insets top="12" bottom="12" left="15" right="15"/>
+                </padding>
+            </Button>
+            
+            <Button fx:id="btnStatistiques" text="📊 Statistiques" onAction="#handleStatistiques" 
+                    styleClass="sidebar-btn" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="14"/>
+                </font>
+                <padding>
+                    <Insets top="12" bottom="12" left="15" right="15"/>
+                </padding>
+            </Button>
+            
+            <Button fx:id="btnEcoles" text="🏫 Gestion des Écoles" onAction="#handleGestionEcoles" 
+                    styleClass="sidebar-btn" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="14"/>
+                </font>
+                <padding>
+                    <Insets top="12" bottom="12" left="15" right="15"/>
+                </padding>
+            </Button>
+            
+            <Button fx:id="btnStages" text="📋 Gestion des Stages" onAction="#handleGestionStages" 
+                    styleClass="sidebar-btn" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="14"/>
+                </font>
+                <padding>
+                    <Insets top="12" bottom="12" left="15" right="15"/>
+                </padding>
+            </Button>
+            
+            <Button fx:id="btnStagiaires" text="👥 Gestion des Stagiaires" onAction="#handleGestionStagiaires" 
+                    styleClass="sidebar-btn" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="14"/>
+                </font>
+                <padding>
+                    <Insets top="12" bottom="12" left="15" right="15"/>
+                </padding>
+            </Button>
+            
+            <Separator/>
+            
+            <Button fx:id="btnTravauxRecurrents" text="🔄 Travaux Récurrents" 
+                    onAction="#handleTravauxRecurrents" styleClass="sidebar-btn" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="14"/>
+                </font>
+                <padding>
+                    <Insets top="12" bottom="12" left="15" right="15"/>
+                </padding>
+            </Button>
+            
+            <Region VBox.vgrow="ALWAYS"/>
+            
+            <Button text="⚙️ Paramètres" onAction="#handleParametres" 
+                    styleClass="sidebar-btn" alignment="BASELINE_LEFT">
+                <font>
+                    <Font size="13"/>
+                </font>
+                <padding>
+                    <Insets top="10" bottom="10" left="15" right="15"/>
+                </padding>
+            </Button>
+        </VBox>
+    </left>
+    
+    <!-- Zone centrale - Contenu principal -->
+    <center>
+        <StackPane fx:id="contentArea">
+            <!-- Vue Emplacement (Carte) - Par défaut -->
+            <HBox fx:id="viewEmplacement" spacing="0">
+                <!-- Carte interactive -->
+                <VBox HBox.hgrow="ALWAYS" styleClass="map-container">
+                    <padding>
+                        <Insets top="10" bottom="10" left="10" right="5"/>
+                    </padding>
+                    
+                    <!-- Barre de contrôle de la carte -->
+                    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="map-controls">
+                        <padding>
+                            <Insets top="8" bottom="8" left="10" right="10"/>
+                        </padding>
+                        
+                        <Label text="Filtres:">
+                            <font>
+                                <Font name="System Bold" size="12"/>
+                            </font>
+                        </Label>
+                        
+                        <ComboBox fx:id="cmbTypeAffichage" promptText="Type d'affichage" 
+                                  styleClass="map-filter" prefWidth="180">
+                            <items>
+                                <javafx.collections.FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="Tous"/>
+                                    <String fx:value="Écoles Professionnelles"/>
+                                    <String fx:value="Écoles Académiques"/>
+                                    <String fx:value="Écoles Partenaires"/>
+                                    <String fx:value="Stagiaires"/>
+                                    <String fx:value="Pays Partenaires"/>
+                                    <String fx:value="Pays d'Accueil"/>
+                                </javafx.collections.FXCollections>
+                            </items>
+                        </ComboBox>
+                        
+                        <ComboBox fx:id="cmbSpecialite" promptText="Spécialité" 
+                                  styleClass="map-filter" prefWidth="150"/>
+                        
+                        <ComboBox fx:id="cmbLangue" promptText="Langue" 
+                                  styleClass="map-filter" prefWidth="120"/>
+                        
+                        <Button text="🔍 Rechercher" onAction="#handleRechercherCarte" 
+                                styleClass="btn-search">
+                            <padding>
+                                <Insets top="5" bottom="5" left="12" right="12"/>
+                            </padding>
+                        </Button>
+                        
+                        <Button text="🔄 Réinitialiser" onAction="#handleResetCarte" 
+                                styleClass="btn-reset">
+                            <padding>
+                                <Insets top="5" bottom="5" left="12" right="12"/>
+                            </padding>
+                        </Button>
+                        
+                        <Region HBox.hgrow="ALWAYS"/>
+                        
+                        <Label fx:id="lblMapInfo" text="Carte interactive" styleClass="map-info">
+                            <font>
+                                <Font size="12"/>
+                            </font>
+                        </Label>
+                    </HBox>
+                    
+                    <!-- WebView pour la carte Leaflet -->
+                    <WebView fx:id="mapWebView" VBox.vgrow="ALWAYS" styleClass="map-webview"/>
+                </VBox>
+                
+                <!-- Panneau de détails à droite -->
+                <VBox fx:id="detailsPanel" spacing="10" styleClass="details-panel" 
+                      prefWidth="350" visible="false">
+                    <padding>
+                        <Insets top="10" bottom="10" left="15" right="15"/>
+                    </padding>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Détails" styleClass="details-title">
+                            <font>
+                                <Font name="System Bold" size="18"/>
+                            </font>
+                        </Label>
+                        
+                        <Region HBox.hgrow="ALWAYS"/>
+                        
+                        <Button text="✕" onAction="#handleFermerDetails" 
+                                styleClass="btn-close-details">
+                            <font>
+                                <Font size="16"/>
+                            </font>
+                        </Button>
+                    </HBox>
+                    
+                    <Separator/>
+                    
+                    <!-- Zone de contenu des détails -->
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="details-scroll">
+                        <VBox fx:id="detailsContent" spacing="15" styleClass="details-content">
+                            <padding>
+                                <Insets top="10" bottom="10" left="10" right="10"/>
+                            </padding>
+                        </VBox>
+                    </ScrollPane>
+                </VBox>
+            </HBox>
+            
+            <!-- Autres vues (initialement invisibles) -->
+            <VBox fx:id="viewStatistiques" visible="false" managed="false">
+                <Label text="Vue Statistiques - En développement" styleClass="placeholder-text">
+                    <font>
+                        <Font size="20"/>
+                    </font>
+                </Label>
+            </VBox>
+            
+            <VBox fx:id="viewEcoles" visible="false" managed="false">
+                <Label text="Vue Gestion des Écoles - En développement" styleClass="placeholder-text">
+                    <font>
+                        <Font size="20"/>
+                    </font>
+                </Label>
+            </VBox>
+            
+            <VBox fx:id="viewStages" visible="false" managed="false">
+                <Label text="Vue Gestion des Stages - En développement" styleClass="placeholder-text">
+                    <font>
+                        <Font size="20"/>
+                    </font>
+                </Label>
+            </VBox>
+            
+            <VBox fx:id="viewStagiaires" visible="false" managed="false">
+                <Label text="Vue Gestion des Stagiaires - En développement" styleClass="placeholder-text">
+                    <font>
+                        <Font size="20"/>
+                    </font>
+                </Label>
+            </VBox>
+        </StackPane>
+    </center>
+    
+</BorderPane>
