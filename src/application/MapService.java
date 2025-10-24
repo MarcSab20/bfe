@@ -1,6 +1,7 @@
 package application;
 
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 
 /**
@@ -32,14 +33,15 @@ public class MapService {
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(
-                 "SELECT e.*, COUNT(s.id) as nb_stagiaires " +
+                 "SELECT e.*, COUNT(st.id) as nb_stagiaires " +
                  "FROM ecoles e " +
-                 "LEFT JOIN stagiaires s ON e.id = s.ecole_id AND s.statut = 'En cours' " +
+                 "LEFT JOIN stages st ON e.id = st.ecole_id AND st.statut = 'En cours' " +
+                 "WHERE e.actif = true " +
                  "GROUP BY e.id")) {
             
             while (rs.next()) {
                 MapMarker marker = new MapMarker();
-                marker.setId(rs.getString("id"));
+                marker.setId(String.valueOf(rs.getLong("id")));
                 marker.setType("ecole");
                 marker.setNom(rs.getString("nom"));
                 marker.setLat(rs.getDouble("latitude"));
@@ -68,14 +70,16 @@ public class MapService {
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(
-                 "SELECT s.*, e.nom as ecole_nom " +
+                 "SELECT s.id, s.nom, s.prenom, s.specialite, s.langue, " +
+                 "st.statut, e.nom as ecole_nom, e.pays, e.ville, e.latitude, e.longitude " +
                  "FROM stagiaires s " +
-                 "JOIN ecoles e ON s.ecole_id = e.id " +
-                 "WHERE s.statut = 'En cours'")) {
+                 "JOIN stages st ON s.id = st.stagiaire_id " +
+                 "JOIN ecoles e ON st.ecole_id = e.id " +
+                 "WHERE st.statut = 'En cours' AND s.actif = true")) {
             
             while (rs.next()) {
                 MapMarker marker = new MapMarker();
-                marker.setId(rs.getString("id"));
+                marker.setId(String.valueOf(rs.getLong("id")));
                 marker.setType("stagiaire");
                 marker.setNom(rs.getString("nom") + " " + rs.getString("prenom"));
                 marker.setLat(rs.getDouble("latitude"));
@@ -105,12 +109,12 @@ public class MapService {
              PreparedStatement pstmt = conn.prepareStatement(
                  "SELECT * FROM ecoles WHERE id = ?")) {
             
-            pstmt.setString(1, id);
+            pstmt.setLong(1, Long.parseLong(id));
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
                 Ecole ecole = new Ecole();
-                ecole.setId(rs.getString("id"));
+                ecole.setId(rs.getLong("id"));
                 ecole.setNom(rs.getString("nom"));
                 ecole.setType(rs.getString("type"));
                 ecole.setVille(rs.getString("ville"));
@@ -120,31 +124,28 @@ public class MapService {
                 ecole.setEmail(rs.getString("email"));
                 ecole.setTelephone(rs.getString("telephone"));
                 ecole.setAdresse(rs.getString("adresse"));
+                ecole.setActif(rs.getBoolean("actif"));
                 
                 // Récupérer le nombre de stagiaires
                 try (Statement stmt = conn.createStatement();
                      ResultSet rs2 = stmt.executeQuery(
-                         "SELECT COUNT(*) FROM stagiaires WHERE ecole_id = '" + id + "' AND statut = 'En cours'")) {
+                         "SELECT COUNT(*) as total FROM stages " +
+                         "WHERE ecole_id = " + id + " AND statut = 'En cours'")) {
                     if (rs2.next()) {
-                        ecole.setNbStagiairesActuels(rs2.getInt(1));
+                        ecole.setNbStagiairesActuels(rs2.getInt("total"));
                     }
                 }
                 
                 // Récupérer les spécialités
-                List<String> specialites = new ArrayList<>();
-                try (Statement stmt = conn.createStatement();
-                     ResultSet rs3 = stmt.executeQuery(
-                         "SELECT specialite FROM ecole_specialites WHERE ecole_id = '" + id + "'")) {
-                    while (rs3.next()) {
-                        specialites.add(rs3.getString("specialite"));
-                    }
+                String specialitesStr = rs.getString("specialites");
+                if (specialitesStr != null && !specialitesStr.isEmpty()) {
+                    ecole.setSpecialites(Arrays.asList(specialitesStr.split(",")));
                 }
-                ecole.setSpecialites(specialites);
                 
                 return ecole;
             }
             
-        } catch (SQLException e) {
+        } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
         }
         
@@ -157,37 +158,58 @@ public class MapService {
     public Stagiaire getStagiaireById(String id) {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
-                 "SELECT s.*, e.nom as ecole_nom " +
+                 "SELECT s.*, st.statut, st.type as type_stage, st.date_debut, st.date_fin, " +
+                 "st.document_id, e.id as ecole_id, e.nom as ecole_nom, e.pays, e.ville, " +
+                 "e.latitude, e.longitude " +
                  "FROM stagiaires s " +
-                 "JOIN ecoles e ON s.ecole_id = e.id " +
+                 "LEFT JOIN stages st ON s.id = st.stagiaire_id AND st.statut = 'En cours' " +
+                 "LEFT JOIN ecoles e ON st.ecole_id = e.id " +
                  "WHERE s.id = ?")) {
             
-            pstmt.setString(1, id);
+            pstmt.setLong(1, Long.parseLong(id));
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
                 Stagiaire stagiaire = new Stagiaire();
-                stagiaire.setId(rs.getString("id"));
+                stagiaire.setId(rs.getLong("id"));
                 stagiaire.setNom(rs.getString("nom"));
                 stagiaire.setPrenom(rs.getString("prenom"));
+                stagiaire.setMatricule(rs.getString("matricule"));
                 stagiaire.setSpecialite(rs.getString("specialite"));
-                stagiaire.setEcoleId(rs.getString("ecole_id"));
-                stagiaire.setEcoleNom(rs.getString("ecole_nom"));
-                stagiaire.setPays(rs.getString("pays"));
-                stagiaire.setVille(rs.getString("ville"));
-                stagiaire.setLatitude(rs.getDouble("latitude"));
-                stagiaire.setLongitude(rs.getDouble("longitude"));
-                stagiaire.setDateDebut(rs.getDate("date_debut").toLocalDate());
-                stagiaire.setDateFin(rs.getDate("date_fin").toLocalDate());
+                stagiaire.setEmail(rs.getString("email"));
+                stagiaire.setTelephone(rs.getString("telephone"));
                 stagiaire.setLangue(rs.getString("langue"));
-                stagiaire.setStatut(rs.getString("statut"));
-                stagiaire.setTypeStage(rs.getString("type_stage"));
-                stagiaire.setDocumentId(rs.getString("document_id"));
+                stagiaire.setActif(rs.getBoolean("actif"));
+                
+                // Informations du stage actif
+                Long ecoleIdValue = rs.getObject("ecole_id", Long.class);
+                if (ecoleIdValue != null) {
+                    stagiaire.setEcoleId(String.valueOf(ecoleIdValue));
+                    stagiaire.setEcoleNom(rs.getString("ecole_nom"));
+                    stagiaire.setPays(rs.getString("pays"));
+                    stagiaire.setVille(rs.getString("ville"));
+                    stagiaire.setLatitude(rs.getObject("latitude", Double.class));
+                    stagiaire.setLongitude(rs.getObject("longitude", Double.class));
+                    
+                    Date dateDebut = rs.getDate("date_debut");
+                    if (dateDebut != null) {
+                        stagiaire.setDateDebut(dateDebut.toLocalDate());
+                    }
+                    
+                    Date dateFin = rs.getDate("date_fin");
+                    if (dateFin != null) {
+                        stagiaire.setDateFin(dateFin.toLocalDate());
+                    }
+                    
+                    stagiaire.setStatut(rs.getString("statut"));
+                    stagiaire.setTypeStage(rs.getString("type_stage"));
+                    stagiaire.setDocumentId(rs.getString("document_id"));
+                }
                 
                 return stagiaire;
             }
             
-        } catch (SQLException e) {
+        } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
         }
         

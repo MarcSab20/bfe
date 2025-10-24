@@ -21,6 +21,7 @@ public class Ecole {
     private LocalDate datePartenariat;
     private String description;
     private boolean actif;
+    private int nbStagiairesActuels; // Nombre de stagiaires actuellement dans cette école
     
     // Constructeurs
     public Ecole() {
@@ -169,5 +170,13 @@ public class Ecole {
     
     public void setActif(boolean actif) {
         this.actif = actif;
+    }
+    
+    public int getNbStagiairesActuels() {
+        return nbStagiairesActuels;
+    }
+    
+    public void setNbStagiairesActuels(int nbStagiairesActuels) {
+        this.nbStagiairesActuels = nbStagiairesActuels;
     }
 }

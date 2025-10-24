@@ -149,12 +149,12 @@ public class AccueilController implements Initializable {
     @FXML
     private void handleLogin() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Login.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Login.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) alertesContainer.getScene().getWindow();
             Scene scene = new Scene(root, 400, 500);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
             stage.setScene(scene);
             stage.centerOnScreen();
@@ -168,7 +168,7 @@ public class AccueilController implements Initializable {
     private void handleContinueWithoutLogin() {
         try {
             // Ouvrir le dashboard sans connexion (mode lecture seule)
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/MainDashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("MainDashboard.fxml"));
             Parent root = loader.load();
 
             MainDashboardController controller = loader.getController();
@@ -176,7 +176,7 @@ public class AccueilController implements Initializable {
 
             Stage stage = (Stage) alertesContainer.getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setMaximized(true);

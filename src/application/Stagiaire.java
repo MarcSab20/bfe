@@ -24,6 +24,19 @@ public class Stagiaire {
     private String photo; // Chemin vers la photo
     private String remarques;
     
+    // Champs supplémentaires pour MapService
+    private String ecoleId;
+    private String ecoleNom;
+    private String pays;
+    private String ville;
+    private Double latitude;
+    private Double longitude;
+    private LocalDate dateDebut;
+    private LocalDate dateFin;
+    private String statut;
+    private String typeStage;
+    private String documentId;
+    
     // Constructeurs
     public Stagiaire() {
     }
@@ -194,6 +207,95 @@ public class Stagiaire {
     
     public void setRemarques(String remarques) {
         this.remarques = remarques;
+    }
+    
+    // Getters et Setters pour les champs supplémentaires
+    public String getEcoleId() {
+        return ecoleId;
+    }
+    
+    public void setEcoleId(String ecoleId) {
+        this.ecoleId = ecoleId;
+    }
+    
+    public String getEcoleNom() {
+        return ecoleNom;
+    }
+    
+    public void setEcoleNom(String ecoleNom) {
+        this.ecoleNom = ecoleNom;
+    }
+    
+    public String getPays() {
+        return pays;
+    }
+    
+    public void setPays(String pays) {
+        this.pays = pays;
+    }
+    
+    public String getVille() {
+        return ville;
+    }
+    
+    public void setVille(String ville) {
+        this.ville = ville;
+    }
+    
+    public Double getLatitude() {
+        return latitude;
+    }
+    
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+    
+    public Double getLongitude() {
+        return longitude;
+    }
+    
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+    
+    public LocalDate getDateDebut() {
+        return dateDebut;
+    }
+    
+    public void setDateDebut(LocalDate dateDebut) {
+        this.dateDebut = dateDebut;
+    }
+    
+    public LocalDate getDateFin() {
+        return dateFin;
+    }
+    
+    public void setDateFin(LocalDate dateFin) {
+        this.dateFin = dateFin;
+    }
+    
+    public String getStatut() {
+        return statut;
+    }
+    
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
+    
+    public String getTypeStage() {
+        return typeStage;
+    }
+    
+    public void setTypeStage(String typeStage) {
+        this.typeStage = typeStage;
+    }
+    
+    public String getDocumentId() {
+        return documentId;
+    }
+    
+    public void setDocumentId(String documentId) {
+        this.documentId = documentId;
     }
     
     public String getNomComplet() {

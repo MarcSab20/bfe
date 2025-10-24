@@ -5,6 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.scene.web.WebView?>
+<?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
             fx:controller="application.MainDashboardController" styleClass="dashboard-root">
@@ -169,7 +170,7 @@
             <!-- Vue Emplacement (Carte) - Par défaut -->
             <HBox fx:id="viewEmplacement" spacing="0">
                 <!-- Carte interactive -->
-                <VBox HBox.hgrow="ALWAYS" styleClass="map-container">
+                <VBox HBox.hgrow="ALWAYS">
                     <padding>
                         <Insets top="10" bottom="10" left="10" right="5"/>
                     </padding>
@@ -231,12 +232,18 @@
                     </HBox>
                     
                     <!-- WebView pour la carte Leaflet -->
-                    <WebView fx:id="mapWebView" VBox.vgrow="ALWAYS" styleClass="map-webview"/>
+                    <WebView fx:id="mapWebView" VBox.vgrow="ALWAYS">
+                        <styleClass>
+                            <String fx:value="map-webview"/>
+                        </styleClass>
+                    </WebView>
                 </VBox>
                 
                 <!-- Panneau de détails à droite -->
-                <VBox fx:id="detailsPanel" spacing="10" styleClass="details-panel" 
-                      prefWidth="350" visible="false">
+                <VBox fx:id="detailsPanel" spacing="10" prefWidth="350" visible="false">
+                    <styleClass>
+                        <String fx:value="details-panel"/>
+                    </styleClass>
                     <padding>
                         <Insets top="10" bottom="10" left="15" right="15"/>
                     </padding>

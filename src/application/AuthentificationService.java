@@ -51,30 +51,30 @@ public class AuthentificationService {
         return null;
     }
     
-    // Hacher un mot de passe (SHA-256)
-    public static String hacherMotDePasse(String motDePasse) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(motDePasse.getBytes("UTF-8"));
-            
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            
-            return hexString.toString();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+//    // Hacher un mot de passe (SHA-256)
+//    public static String hacherMotDePasse(String motDePasse) {
+//        try {
+//            MessageDigest md = MessageDigest.getInstance("SHA-256");
+//            byte[] hash = md.digest(motDePasse.getBytes("UTF-8"));
+//            
+//            StringBuilder hexString = new StringBuilder();
+//            for (byte b : hash) {
+//                String hex = Integer.toHexString(0xff & b);
+//                if (hex.length() == 1) hexString.append('0');
+//                hexString.append(hex);
+//            }
+//            
+//            return hexString.toString();
+//            
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
     
     // Vérifier un mot de passe
     private boolean verifierMotDePasse(String motDePasse, String hash) {
-        String motDePasseHashe = hacherMotDePasse(motDePasse);
+        String motDePasseHashe = motDePasse;
         return motDePasseHashe != null && motDePasseHashe.equals(hash);
     }
     
@@ -106,7 +106,7 @@ public class AuthentificationService {
             
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, nomUtilisateur);
-            stmt.setString(2, hacherMotDePasse(motDePasse));
+            stmt.setString(2, motDePasse);
             stmt.setString(3, niveauAcces);
             stmt.setString(4, nom);
             stmt.setString(5, prenom);

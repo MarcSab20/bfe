@@ -16,11 +16,11 @@ public class Main extends Application {
             MongoDBManager.initialize();
             
             // Charger la page d'accueil
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Accueil.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Accueil.fxml"));
             Parent root = loader.load();
             
             Scene scene = new Scene(root, 1400, 800);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
             
             primaryStage.setTitle("Gestion du Personnel et des Stagiaires");
             primaryStage.setScene(scene);

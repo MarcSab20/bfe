@@ -94,7 +94,7 @@
                             <Font name="System Bold" size="36"/>
                         </font>
                     </Label>
-                    <Label text="Retours < 2 Semaines" styleClass="stat-label">
+                    <Label text="Retours &lt; 2 Semaines" styleClass="stat-label">
                         <font>
                             <Font size="14"/>
                         </font>

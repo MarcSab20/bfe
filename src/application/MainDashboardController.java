@@ -6,12 +6,13 @@ import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
+import javafx.scene.Node;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -100,7 +101,7 @@ public class MainDashboardController implements Initializable {
         
         // Charger la page HTML de la carte
         try {
-            URL mapUrl = getClass().getResource("/map/leaflet.html");
+            URL mapUrl = getClass().getResource("leaflet.html");
             if (mapUrl != null) {
                 webEngine.load(mapUrl.toExternalForm());
             } else {
@@ -148,7 +149,7 @@ public class MainDashboardController implements Initializable {
     private void chargerToutesLesMarqueurs() {
         try {
             // Récupérer toutes les écoles
-            List<Ecole> ecoles = ecoleService.getToutesEcoles();
+            final List<Ecole> ecoles = ecoleService.getToutesEcoles();
             
             for (Ecole ecole : ecoles) {
                 if (ecole.getLatitude() != null && ecole.getLongitude() != null) {
@@ -168,7 +169,7 @@ public class MainDashboardController implements Initializable {
             }
             
             // Récupérer tous les stagiaires actifs
-            List<Stagiaire> stagiaires = stagiaireService.getStagiairesActifs();
+            final List<Stagiaire> stagiaires = stagiaireService.getStagiairesActifs();
             
             for (Stagiaire stagiaire : stagiaires) {
                 StageFormation stage = stageService.getStageActifByStagiaire(stagiaire.getId());
@@ -216,15 +217,16 @@ public class MainDashboardController implements Initializable {
             
             // Filtrer par spécialité si nécessaire
             if (specialite != null && !specialite.isEmpty()) {
+                final String specialiteFiltre = specialite;
                 ecoles = ecoleService.getToutesEcoles().stream()
                     .filter(e -> e.getSpecialites() != null &&
-                            e.getSpecialites().contains(specialite))
+                            e.getSpecialites().contains(specialiteFiltre))
                     .collect(Collectors.toList());
-            } else {
-                ecoles = ecoleService.getToutesEcoles();
             }
             
-            for (Ecole ecole : ecoles) {
+            final List<Ecole> ecolesFinal = ecoles;
+            
+            for (Ecole ecole : ecolesFinal) {
                 if (ecole.getLatitude() != null && ecole.getLongitude() != null) {
                     String couleur = determinerCouleurEcole(ecole);
                     String infobulle = creerInfobulleEcole(ecole);
@@ -242,7 +244,7 @@ public class MainDashboardController implements Initializable {
             }
             
             Platform.runLater(() -> {
-                lblMapInfo.setText("Affichage: " + ecoles.size() + " écoles");
+                lblMapInfo.setText("Affichage: " + ecolesFinal.size() + " écoles");
             });
             
         } catch (Exception e) {
@@ -256,21 +258,25 @@ public class MainDashboardController implements Initializable {
             
             // Filtrer par spécialité et langue
             if (specialite != null && !specialite.isEmpty()) {
+                final String specialiteFiltre = specialite;
                 stagiaires = stagiaires.stream()
                     .filter(s -> s.getSpecialite() != null && 
-                               s.getSpecialite().equals(specialite))
-                    .toList();
+                               s.getSpecialite().equals(specialiteFiltre))
+                    .collect(Collectors.toList());
             }
             
             if (langue != null && !langue.isEmpty()) {
+                final String langueFiltre = langue;
                 stagiaires = stagiaires.stream()
                     .filter(s -> s.getLangue() != null && 
-                               s.getLangue().equals(langue))
-                    .toList();
+                               s.getLangue().equals(langueFiltre))
+                    .collect(Collectors.toList());
             }
             
-            for (Stagiaire stagiaire : stagiaires) {
-                Stage stage = stageService.getStageActifByStagiaire(stagiaire.getId());
+            final List<Stagiaire> stagiairesFinal = stagiaires;
+            
+            for (Stagiaire stagiaire : stagiairesFinal) {
+                StageFormation stage = stageService.getStageActifByStagiaire(stagiaire.getId());
                 if (stage != null && stage.getEcole() != null) {
                     Ecole ecole = stage.getEcole();
                     if (ecole.getLatitude() != null && ecole.getLongitude() != null) {
@@ -290,7 +296,7 @@ public class MainDashboardController implements Initializable {
             }
             
             Platform.runLater(() -> {
-                lblMapInfo.setText("Affichage: " + stagiaires.size() + " stagiaires");
+                lblMapInfo.setText("Affichage: " + stagiairesFinal.size() + " stagiaires");
             });
             
         } catch (Exception e) {
@@ -373,7 +379,7 @@ public class MainDashboardController implements Initializable {
     
     private void chargerAlertesBar() {
         try {
-            List<Alerte> alertes = alerteService.getAlertesUrgentes(30); // 30 jours
+            final List<Alerte> alertes = alerteService.getAlertesUrgentes(30); // 30 jours
             
             Platform.runLater(() -> {
                 alertBarContainer.getChildren().clear();
@@ -530,7 +536,6 @@ public class MainDashboardController implements Initializable {
     
     @FXML
     private void handleTravauxRecurrents() {
-        // À implémenter
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Travaux Récurrents");
         alert.setHeaderText("Module en développement");
@@ -540,7 +545,6 @@ public class MainDashboardController implements Initializable {
     
     @FXML
     private void handleParametres() {
-        // À implémenter
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Paramètres");
         alert.setHeaderText("Paramètres de l'application");
@@ -548,7 +552,7 @@ public class MainDashboardController implements Initializable {
         alert.showAndWait();
     }
     
-    private void changerVue(VBox nouvelleVue, Button bouton) {
+    private void changerVue(Node nouvelleVue, Button bouton) {
         // Masquer toutes les vues
         viewEmplacement.setVisible(false);
         viewEmplacement.setManaged(false);
@@ -612,12 +616,12 @@ public class MainDashboardController implements Initializable {
         }
         
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Accueil.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Accueil.fxml"));
             Parent root = loader.load();
             
             Stage stage = (Stage) lblUtilisateur.getScene().getWindow();
             Scene scene = new Scene(root, 1400, 800);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
             
             stage.setScene(scene);
             stage.centerOnScreen();

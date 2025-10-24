@@ -100,7 +100,7 @@ public class LoginController implements Initializable {
 
     private void ouvrirDashboard(Utilisateur utilisateur) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/MainDashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("MainDashboard.fxml"));
             Parent root = loader.load();
 
             // Passer les informations utilisateur au dashboard
@@ -110,7 +110,7 @@ public class LoginController implements Initializable {
 
             Stage stage = (Stage) txtUsername.getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setMaximized(true);
@@ -130,12 +130,12 @@ public class LoginController implements Initializable {
     private void handleCancel() {
         try {
             // Retour à la page d'accueil
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Accueil.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Accueil.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) txtUsername.getScene().getWindow();
             Scene scene = new Scene(root, 1400, 800);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
             stage.setScene(scene);
             stage.centerOnScreen();
