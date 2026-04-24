@@ -1,391 +1,239 @@
-package application.services;
+package application.stages;
 
-import application.models.StageFormation;
-import application.models.Stagiaire;
-import application.models.Ecole;
-import application.DatabaseManager;
+import application.utils.DatabaseManager;
+import application.ecoles.Ecole;
+import application.ecoles.EcoleService;
+import application.stagiaires.Stagiaire;
+import application.stagiaires.StagiaireService;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service pour la gestion des stages
- */
 public class StageService {
-    
-    private EcoleService ecoleService;
-    private StagiaireService stagiaireService;
-    
-    public StageService() {
-        this.ecoleService = new EcoleService();
-        this.stagiaireService = new StagiaireService();
-    }
-    
-    /**
-     * Obtenir tous les stages
-     */
+
+    private final EcoleService ecoleService = new EcoleService();
+    private final StagiaireService stagiaireService = new StagiaireService();
+
+    // ------------------------------------------------------------------ lecture
+
     public List<StageFormation> getTousLesStages() {
-        List<StageFormation> stages = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stages ORDER BY date_creation DESC";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                stages.add(mapResultSetToStage(rs));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return stages;
+        List<StageFormation> list = new ArrayList<>();
+        String sql = "SELECT * FROM stages ORDER BY date_creation DESC";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Obtenir les stages en cours
-     */
+
     public List<StageFormation> getStagesEnCours() {
-        List<StageFormation> stages = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stages WHERE statut = 'En cours' ORDER BY date_debut DESC";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                stages.add(mapResultSetToStage(rs));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return stages;
+        List<StageFormation> list = new ArrayList<>();
+        String sql = "SELECT * FROM stages WHERE statut = 'En cours' ORDER BY date_debut DESC";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Obtenir le stage actif d'un stagiaire
-     */
+
+    public List<StageFormation> getStagesTermines() {
+        List<StageFormation> list = new ArrayList<>();
+        String sql = "SELECT * FROM stages WHERE statut = 'Terminé' ORDER BY date_fin DESC";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public StageFormation getStageActifByStagiaire(Long stagiaireId) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stages WHERE stagiaire_id = ? AND statut = 'En cours'";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, stagiaireId);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                StageFormation stage = mapResultSetToStage(rs);
-                rs.close();
-                stmt.close();
-                return stage;
+        String sql = "SELECT * FROM stages WHERE stagiaire_id = ? AND statut = 'En cours' LIMIT 1";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, stagiaireId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapper(rs);
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
-    
-    /**
-     * Obtenir un stage par ID
-     */
+
     public StageFormation getStageParId(Long id) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stages WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                StageFormation stage = mapResultSetToStage(rs);
-                rs.close();
-                stmt.close();
-                return stage;
+        String sql = "SELECT * FROM stages WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapper(rs);
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
-    
-    /**
-     * Obtenir les stages par école
-     */
+
     public List<StageFormation> getStagesParEcole(Long ecoleId) {
-        List<StageFormation> stages = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stages WHERE ecole_id = ? ORDER BY date_debut DESC";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, ecoleId);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                stages.add(mapResultSetToStage(rs));
+        List<StageFormation> list = new ArrayList<>();
+        String sql = "SELECT * FROM stages WHERE ecole_id = ? ORDER BY date_debut DESC";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, ecoleId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapper(rs));
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return stages;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Compter les stages par statut
-     */
+
+    public List<StageFormation> getStagesParStagiaire(Long stagiaireId) {
+        List<StageFormation> list = new ArrayList<>();
+        String sql = "SELECT * FROM stages WHERE stagiaire_id = ? ORDER BY date_debut DESC";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, stagiaireId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapper(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public int compterStagesParStatut(String statut) {
-        int count = 0;
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT COUNT(*) as total FROM stages WHERE statut = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, statut);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                count = rs.getInt("total");
+        String sql = "SELECT COUNT(*) FROM stages WHERE statut = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, statut);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return count;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
     }
-    
-    /**
-     * Mapper ResultSet vers Stage
-     */
-    private StageFormation mapResultSetToStage(ResultSet rs) throws SQLException {
-        StageFormation stage = new StageFormation();
-        stage.setId(rs.getLong("id"));
-        
-        // Charger le stagiaire
-        Long stagiaireId = rs.getLong("stagiaire_id");
-        Stagiaire stagiaire = stagiaireService.getStagiaireParId(stagiaireId);
-        stage.setStagiaire(stagiaire);
-        
-        // Charger l'école
-        Long ecoleId = rs.getLong("ecole_id");
-        Ecole ecole = ecoleService.getEcoleParId(ecoleId);
-        stage.setEcole(ecole);
-        
-        stage.setType(rs.getString("type"));
-        stage.setDateDebut(rs.getObject("date_debut", java.time.LocalDate.class));
-        stage.setDateFin(rs.getObject("date_fin", java.time.LocalDate.class));
-        stage.setSpecialite(rs.getString("specialite"));
-        stage.setEncadrant(rs.getString("encadrant"));
-        stage.setTuteur(rs.getString("tuteur"));
-        stage.setObjectifs(rs.getString("objectifs"));
-        stage.setDescription(rs.getString("description"));
-        stage.setStatut(rs.getString("statut"));
-        stage.setDocumentId(rs.getString("document_id"));
-        stage.setDocumentNom(rs.getString("document_nom"));
-        stage.setRemarques(rs.getString("remarques"));
-        stage.setDateCreation(rs.getObject("date_creation", java.time.LocalDate.class));
-        
-        return stage;
+
+    public List<StageFormation> getStagesProchainsFin(int joursLimite) {
+        List<StageFormation> list = new ArrayList<>();
+        String sql = "SELECT * FROM stages WHERE statut = 'En cours' " +
+                     "AND DATEDIFF(date_fin, CURDATE()) <= ? AND date_fin >= CURDATE() " +
+                     "ORDER BY date_fin ASC";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, joursLimite);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapper(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Créer un stage
-     */
-    public boolean creerStage(StageFormation stage) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "INSERT INTO stages (stagiaire_id, ecole_id, type, date_debut, date_fin, " +
-                        "specialite, encadrant, tuteur, objectifs, description, statut, document_id, " +
-                        "document_nom, remarques, date_creation) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stmt.setLong(1, stage.getStagiaire().getId());
-            stmt.setLong(2, stage.getEcole().getId());
-            stmt.setString(3, stage.getType());
-            stmt.setObject(4, stage.getDateDebut());
-            stmt.setObject(5, stage.getDateFin());
-            stmt.setString(6, stage.getSpecialite());
-            stmt.setString(7, stage.getEncadrant());
-            stmt.setString(8, stage.getTuteur());
-            stmt.setString(9, stage.getObjectifs());
-            stmt.setString(10, stage.getDescription());
-            stmt.setString(11, stage.getStatut());
-            stmt.setString(12, stage.getDocumentId());
-            stmt.setString(13, stage.getDocumentNom());
-            stmt.setString(14, stage.getRemarques());
-            stmt.setObject(15, stage.getDateCreation());
-            
-            int result = stmt.executeUpdate();
-            
-            // Récupérer l'ID généré
-            if (result > 0) {
-                ResultSet generatedKeys = stmt.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    stage.setId(generatedKeys.getLong(1));
+
+    // ------------------------------------------------------------------ écriture
+
+    public boolean creerStage(StageFormation sf) {
+        String sql = "INSERT INTO stages (stagiaire_id,ecole_id,type,date_debut,date_fin," +
+                     "specialite,encadrant,tuteur,objectifs,description,statut,document_id," +
+                     "document_nom,remarques,date_creation) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            remplir(ps, sf);
+            if (ps.executeUpdate() > 0) {
+                try (ResultSet gk = ps.getGeneratedKeys()) {
+                    if (gk.next()) sf.setId(gk.getLong(1));
                 }
-                generatedKeys.close();
+                return true;
             }
-            
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Mettre à jour un stage
-     */
-    public boolean mettreAJourStage(StageFormation stage) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE stages SET stagiaire_id = ?, ecole_id = ?, type = ?, date_debut = ?, " +
-                        "date_fin = ?, specialite = ?, encadrant = ?, tuteur = ?, objectifs = ?, " +
-                        "description = ?, statut = ?, document_id = ?, document_nom = ?, remarques = ? " +
-                        "WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, stage.getStagiaire().getId());
-            stmt.setLong(2, stage.getEcole().getId());
-            stmt.setString(3, stage.getType());
-            stmt.setObject(4, stage.getDateDebut());
-            stmt.setObject(5, stage.getDateFin());
-            stmt.setString(6, stage.getSpecialite());
-            stmt.setString(7, stage.getEncadrant());
-            stmt.setString(8, stage.getTuteur());
-            stmt.setString(9, stage.getObjectifs());
-            stmt.setString(10, stage.getDescription());
-            stmt.setString(11, stage.getStatut());
-            stmt.setString(12, stage.getDocumentId());
-            stmt.setString(13, stage.getDocumentNom());
-            stmt.setString(14, stage.getRemarques());
-            stmt.setLong(15, stage.getId());
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+
+    public boolean mettreAJourStage(StageFormation sf) {
+        String sql = "UPDATE stages SET stagiaire_id=?,ecole_id=?,type=?,date_debut=?,date_fin=?," +
+                     "specialite=?,encadrant=?,tuteur=?,objectifs=?,description=?,statut=?," +
+                     "document_id=?,document_nom=?,remarques=?,date_creation=? WHERE id=?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            remplir(ps, sf);
+            ps.setLong(16, sf.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Mettre à jour le statut d'un stage
-     */
+
     public boolean mettreAJourStatut(Long stageId, String nouveauStatut) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE stages SET statut = ? WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, nouveauStatut);
-            stmt.setLong(2, stageId);
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        String sql = "UPDATE stages SET statut = ? WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, nouveauStatut);
+            ps.setLong(2, stageId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Mettre à jour le document d'un stage
-     */
+
     public boolean mettreAJourDocument(Long stageId, String documentId, String documentNom) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE stages SET document_id = ?, document_nom = ? WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, documentId);
-            stmt.setString(2, documentNom);
-            stmt.setLong(3, stageId);
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        String sql = "UPDATE stages SET document_id = ?, document_nom = ? WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, documentId);
+            ps.setString(2, documentNom);
+            ps.setLong(3, stageId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Supprimer un stage
-     */
+
     public boolean supprimerStage(Long id) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "DELETE FROM stages WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        String sql = "DELETE FROM stages WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    // ------------------------------------------------------------------ helpers
+
+    private void remplir(PreparedStatement ps, StageFormation sf) throws SQLException {
+        ps.setLong(1, sf.getStagiaire() != null ? sf.getStagiaire().getId() : 0);
+        ps.setLong(2, sf.getEcole() != null ? sf.getEcole().getId() : 0);
+        ps.setString(3, sf.getType());
+        ps.setObject(4, sf.getDateDebut());
+        ps.setObject(5, sf.getDateFin());
+        ps.setString(6, sf.getSpecialite());
+        ps.setString(7, sf.getEncadrant());
+        ps.setString(8, sf.getTuteur());
+        ps.setString(9, sf.getObjectifs());
+        ps.setString(10, sf.getDescription());
+        ps.setString(11, sf.getStatut());
+        ps.setString(12, sf.getDocumentId());
+        ps.setString(13, sf.getDocumentNom());
+        ps.setString(14, sf.getRemarques());
+        ps.setObject(15, sf.getDateCreation());
+    }
+
+    private StageFormation mapper(ResultSet rs) throws SQLException {
+        StageFormation sf = new StageFormation();
+        sf.setId(rs.getLong("id"));
+        long stagiaireId = rs.getLong("stagiaire_id");
+        long ecoleId = rs.getLong("ecole_id");
+        Stagiaire stagiaire = stagiaireService.getStagiaireParId(stagiaireId);
+        Ecole ecole = ecoleService.getEcoleParId(ecoleId);
+        sf.setStagiaire(stagiaire);
+        sf.setEcole(ecole);
+        sf.setType(rs.getString("type"));
+        sf.setDateDebut(rs.getObject("date_debut", java.time.LocalDate.class));
+        sf.setDateFin(rs.getObject("date_fin", java.time.LocalDate.class));
+        sf.setSpecialite(rs.getString("specialite"));
+        sf.setEncadrant(rs.getString("encadrant"));
+        sf.setTuteur(rs.getString("tuteur"));
+        sf.setObjectifs(rs.getString("objectifs"));
+        sf.setDescription(rs.getString("description"));
+        sf.setStatut(rs.getString("statut"));
+        sf.setDocumentId(rs.getString("document_id"));
+        sf.setDocumentNom(rs.getString("document_nom"));
+        sf.setRemarques(rs.getString("remarques"));
+        sf.setDateCreation(rs.getObject("date_creation", java.time.LocalDate.class));
+        return sf;
     }
 }

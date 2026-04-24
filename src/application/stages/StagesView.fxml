@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="application.stages.StagesViewController"
+            styleClass="view-root">
+
+    <!-- ===== BARRE SUPERIEURE ===================================== -->
+    <top>
+        <VBox styleClass="control-bar" spacing="10">
+            <padding><Insets top="15" bottom="10" left="20" right="20"/></padding>
+
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="Gestion des Stages" styleClass="view-title">
+                    <font><Font name="System Bold" size="18"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="+ Nouveau Stage" styleClass="btn-primary" onAction="#handleNouveauStage"/>
+                <Button text="Exporter"         styleClass="btn-secondary" onAction="#handleExporter"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtRecherche" promptText="Rechercher (stagiaire, école…)"
+                           prefWidth="260" styleClass="search-field"/>
+                <Label text="Statut :"/>
+                <ComboBox fx:id="cmbStatut" prefWidth="130" onAction="#handleFiltreChange"/>
+                <Label text="Type :"/>
+                <ComboBox fx:id="cmbType"   prefWidth="160" onAction="#handleFiltreChange"/>
+                <Button text="Réinitialiser" styleClass="btn-secondary" onAction="#handleReinitialiser"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblTotal" text="0 stage(s)" styleClass="label-count"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- ===== CONTENU PRINCIPAL ===================================== -->
+    <center>
+        <SplitPane dividerPositions="0.58" styleClass="main-split">
+
+            <!-- Tableau -->
+            <VBox spacing="0" styleClass="table-container">
+
+                <TableView fx:id="tableStages" VBox.vgrow="ALWAYS" styleClass="data-table">
+                    <columns>
+                        <TableColumn fx:id="colStagiaire"     text="Stagiaire"     prefWidth="160"/>
+                        <TableColumn fx:id="colEcole"         text="École"         prefWidth="150"/>
+                        <TableColumn fx:id="colType"          text="Type"          prefWidth="140"/>
+                        <TableColumn fx:id="colDebut"         text="Début"         prefWidth="90"/>
+                        <TableColumn fx:id="colFin"           text="Fin"           prefWidth="90"/>
+                        <TableColumn fx:id="colStatut"        text="Statut"        prefWidth="90"/>
+                        <TableColumn fx:id="colJoursRestants" text="Jours rest."   prefWidth="90"/>
+                        <TableColumn fx:id="colActions"       text="Actions"       prefWidth="90"/>
+                    </columns>
+                    <placeholder><Label text="Aucun stage trouvé"/></placeholder>
+                </TableView>
+
+                <HBox spacing="10" alignment="CENTER" styleClass="pagination-bar">
+                    <padding><Insets top="8" bottom="8" left="10" right="10"/></padding>
+                    <Button text="◀" styleClass="btn-page" onAction="#handlePagePrecedente"/>
+                    <Label fx:id="lblPage" text="Page 1 / 1"/>
+                    <Button text="▶" styleClass="btn-page" onAction="#handlePageSuivante"/>
+                </HBox>
+            </VBox>
+
+            <!-- Formulaire / Détails -->
+            <ScrollPane fitToWidth="true" styleClass="form-scroll">
+                <VBox spacing="14" styleClass="form-panel">
+                    <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label fx:id="lblFormTitle" text="Détails du Stage" styleClass="form-title">
+                            <font><Font name="System Bold" size="15"/></font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnAnnuler" text="Annuler" styleClass="btn-secondary"
+                                visible="false" onAction="#handleAnnuler"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <!-- Acteurs -->
+                    <Label text="Acteurs" styleClass="section-header"/>
+
+                    <VBox spacing="5">
+                        <Label text="Stagiaire *"/>
+                        <ComboBox fx:id="cmbStagiaire" maxWidth="Infinity" disable="true"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="École d'accueil *"/>
+                        <ComboBox fx:id="cmbEcole" maxWidth="Infinity" disable="true"/>
+                    </VBox>
+
+                    <Separator/>
+                    <Label text="Informations du stage" styleClass="section-header"/>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Type *"/>
+                            <ComboBox fx:id="cmbFormType" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Statut"/>
+                            <ComboBox fx:id="cmbFormStatut" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Date de début *"/>
+                            <DatePicker fx:id="dpDebut" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Date de fin *"/>
+                            <DatePicker fx:id="dpFin" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <Label fx:id="lblDuree" text="Durée : —" styleClass="label-info"/>
+
+                    <VBox spacing="5">
+                        <Label text="Spécialité"/>
+                        <TextField fx:id="txtSpecialite" promptText="Domaine du stage" disable="true"/>
+                    </VBox>
+
+                    <Separator/>
+                    <Label text="Encadrement" styleClass="section-header"/>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Encadrant entreprise"/>
+                            <TextField fx:id="txtEncadrant" promptText="Nom de l'encadrant" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Tuteur école"/>
+                            <TextField fx:id="txtTuteur" promptText="Nom du tuteur" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <Separator/>
+                    <Label text="Description" styleClass="section-header"/>
+
+                    <VBox spacing="5">
+                        <Label text="Objectifs"/>
+                        <TextArea fx:id="txtObjectifs" prefRowCount="3" wrapText="true" disable="true"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="Description"/>
+                        <TextArea fx:id="txtDescription" prefRowCount="3" wrapText="true" disable="true"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="Remarques"/>
+                        <TextArea fx:id="txtRemarques" prefRowCount="2" wrapText="true" disable="true"/>
+                    </VBox>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button fx:id="btnSupprimerForm" text="Supprimer" styleClass="btn-danger"
+                                visible="false" onAction="#handleSupprimerForm"/>
+                        <Button fx:id="btnEnregistrer" text="Enregistrer" styleClass="btn-primary"
+                                visible="false" onAction="#handleEnregistrer"/>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+
+        </SplitPane>
+    </center>
+</BorderPane>

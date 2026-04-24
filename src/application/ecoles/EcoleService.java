@@ -1,309 +1,201 @@
 package application.ecoles;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import application.utils.DatabaseManager;
+
+import java.math.BigDecimal;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Service pour la gestion des écoles
- */
 public class EcoleService {
-    
-    /**
-     * Obtenir toutes les écoles
-     */
+
+    // ------------------------------------------------------------------ lecture
+
     public List<Ecole> getToutesEcoles() {
         List<Ecole> ecoles = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM ecoles WHERE actif = true ORDER BY nom";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                ecoles.add(mapResultSetToEcole(rs));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        String sql = "SELECT * FROM ecoles WHERE actif = true ORDER BY nom";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) ecoles.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
         return ecoles;
     }
-    
-    /**
-     * Obtenir les écoles par type
-     */
+
     public List<Ecole> getEcolesParType(String type) {
         List<Ecole> ecoles = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM ecoles WHERE type = ? AND actif = true ORDER BY nom";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, type);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                ecoles.add(mapResultSetToEcole(rs));
+        String sql = "SELECT * FROM ecoles WHERE type = ? AND actif = true ORDER BY nom";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, type);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) ecoles.add(mapper(rs));
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        } catch (SQLException e) { e.printStackTrace(); }
         return ecoles;
     }
-    
-    /**
-     * Obtenir les écoles partenaires
-     */
+
     public List<Ecole> getEcolesPartenaires() {
         List<Ecole> ecoles = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM ecoles WHERE partenaire = true AND actif = true ORDER BY nom";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                ecoles.add(mapResultSetToEcole(rs));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        String sql = "SELECT * FROM ecoles WHERE partenaire = true AND actif = true ORDER BY nom";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) ecoles.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
         return ecoles;
     }
-    
-    /**
-     * Obtenir une école par ID
-     */
-    public Ecole getEcoleParId(Long id) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM ecoles WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                Ecole ecole = mapResultSetToEcole(rs);
-                rs.close();
-                stmt.close();
-                return ecole;
+
+    public List<Ecole> rechercherEcoles(String terme) {
+        List<Ecole> ecoles = new ArrayList<>();
+        String sql = "SELECT * FROM ecoles WHERE actif = true AND " +
+                     "(LOWER(nom) LIKE ? OR LOWER(pays) LIKE ? OR LOWER(ville) LIKE ?) ORDER BY nom";
+        String like = "%" + terme.toLowerCase() + "%";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, like); ps.setString(2, like); ps.setString(3, like);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) ecoles.add(mapper(rs));
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        } catch (SQLException e) { e.printStackTrace(); }
+        return ecoles;
+    }
+
+    public Ecole getEcoleParId(Long id) {
+        String sql = "SELECT * FROM ecoles WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapper(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
-    
-    /**
-     * Compter les écoles actives
-     */
+
     public int compterEcolesActives() {
-        int count = 0;
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT COUNT(*) as total FROM ecoles WHERE actif = true";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                count = rs.getInt("total");
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return count;
+        String sql = "SELECT COUNT(*) FROM ecoles WHERE actif = true";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
     }
-    
-    /**
-     * Mapper ResultSet vers Ecole
-     */
-    private Ecole mapResultSetToEcole(ResultSet rs) throws SQLException {
-        Ecole ecole = new Ecole();
-        ecole.setId(rs.getLong("id"));
-        ecole.setNom(rs.getString("nom"));
-        ecole.setType(rs.getString("type"));
-        ecole.setPays(rs.getString("pays"));
-        ecole.setVille(rs.getString("ville"));
-        ecole.setAdresse(rs.getString("adresse"));
-        ecole.setLatitude(rs.getObject("latitude", Double.class));
-        ecole.setLongitude(rs.getObject("longitude", Double.class));
-        ecole.setContact(rs.getString("contact"));
-        ecole.setEmail(rs.getString("email"));
-        ecole.setTelephone(rs.getString("telephone"));
-        ecole.setSiteWeb(rs.getString("site_web"));
-        
-        // Convertir les spécialités (stockées comme chaîne séparée par des virgules)
-        String specialitesStr = rs.getString("specialites");
-        if (specialitesStr != null && !specialitesStr.isEmpty()) {
-            ecole.setSpecialites(Arrays.asList(specialitesStr.split(",")));
-        }
-        
-        ecole.setPartenaire(rs.getBoolean("partenaire"));
-        ecole.setDatePartenariat(rs.getObject("date_partenariat", java.time.LocalDate.class));
-        ecole.setDescription(rs.getString("description"));
-        ecole.setActif(rs.getBoolean("actif"));
-        
-        return ecole;
+
+    public List<String> getTousPays() {
+        List<String> pays = new ArrayList<>();
+        String sql = "SELECT DISTINCT pays FROM ecoles WHERE pays IS NOT NULL AND actif = true ORDER BY pays";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) pays.add(rs.getString(1));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return pays;
     }
-    
-    /**
-     * Créer une école
-     */
-    public boolean creerEcole(Ecole ecole) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "INSERT INTO ecoles (nom, type, pays, ville, adresse, latitude, longitude, " +
-                        "contact, email, telephone, site_web, specialites, partenaire, date_partenariat, " +
-                        "description, actif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stmt.setString(1, ecole.getNom());
-            stmt.setString(2, ecole.getType());
-            stmt.setString(3, ecole.getPays());
-            stmt.setString(4, ecole.getVille());
-            stmt.setString(5, ecole.getAdresse());
-            stmt.setObject(6, ecole.getLatitude());
-            stmt.setObject(7, ecole.getLongitude());
-            stmt.setString(8, ecole.getContact());
-            stmt.setString(9, ecole.getEmail());
-            stmt.setString(10, ecole.getTelephone());
-            stmt.setString(11, ecole.getSiteWeb());
-            
-            // Convertir la liste de spécialités en chaîne
-            String specialites = ecole.getSpecialites() != null ? 
-                String.join(",", ecole.getSpecialites()) : null;
-            stmt.setString(12, specialites);
-            
-            stmt.setBoolean(13, ecole.isPartenaire());
-            stmt.setObject(14, ecole.getDatePartenariat());
-            stmt.setString(15, ecole.getDescription());
-            stmt.setBoolean(16, ecole.isActif());
-            
-            int result = stmt.executeUpdate();
-            
-            // Récupérer l'ID généré
-            if (result > 0) {
-                ResultSet generatedKeys = stmt.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    ecole.setId(generatedKeys.getLong(1));
+
+    // ------------------------------------------------------------------ écriture
+
+    public boolean creerEcole(Ecole e) {
+        String sql = "INSERT INTO ecoles (nom,type,pays,ville,adresse,latitude,longitude," +
+                     "contact,email,telephone,site_web,specialites,partenaire,date_partenariat," +
+                     "description,actif) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            remplir(ps, e);
+            if (ps.executeUpdate() > 0) {
+                try (ResultSet gk = ps.getGeneratedKeys()) {
+                    if (gk.next()) e.setId(gk.getLong(1));
                 }
-                generatedKeys.close();
+                return true;
             }
-            
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException ex) { ex.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Mettre à jour une école
-     */
-    public boolean mettreAJourEcole(Ecole ecole) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE ecoles SET nom = ?, type = ?, pays = ?, ville = ?, adresse = ?, " +
-                        "latitude = ?, longitude = ?, contact = ?, email = ?, telephone = ?, " +
-                        "site_web = ?, specialites = ?, partenaire = ?, date_partenariat = ?, " +
-                        "description = ?, actif = ? WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, ecole.getNom());
-            stmt.setString(2, ecole.getType());
-            stmt.setString(3, ecole.getPays());
-            stmt.setString(4, ecole.getVille());
-            stmt.setString(5, ecole.getAdresse());
-            stmt.setObject(6, ecole.getLatitude());
-            stmt.setObject(7, ecole.getLongitude());
-            stmt.setString(8, ecole.getContact());
-            stmt.setString(9, ecole.getEmail());
-            stmt.setString(10, ecole.getTelephone());
-            stmt.setString(11, ecole.getSiteWeb());
-            
-            String specialites = ecole.getSpecialites() != null ? 
-                String.join(",", ecole.getSpecialites()) : null;
-            stmt.setString(12, specialites);
-            
-            stmt.setBoolean(13, ecole.isPartenaire());
-            stmt.setObject(14, ecole.getDatePartenariat());
-            stmt.setString(15, ecole.getDescription());
-            stmt.setBoolean(16, ecole.isActif());
-            stmt.setLong(17, ecole.getId());
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+
+    public boolean mettreAJourEcole(Ecole e) {
+        String sql = "UPDATE ecoles SET nom=?,type=?,pays=?,ville=?,adresse=?,latitude=?," +
+                     "longitude=?,contact=?,email=?,telephone=?,site_web=?,specialites=?," +
+                     "partenaire=?,date_partenariat=?,description=?,actif=? WHERE id=?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            remplir(ps, e);
+            ps.setLong(17, e.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) { ex.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Supprimer une école (suppression logique)
-     */
+
     public boolean supprimerEcole(Long id) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE ecoles SET actif = false WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+        String sql = "UPDATE ecoles SET actif = false WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) { ex.printStackTrace(); }
+        return false;
+    }
+
+    // ------------------------------------------------------------------ helpers
+
+    private void remplir(PreparedStatement ps, Ecole e) throws SQLException {
+        ps.setString(1, e.getNom());
+        ps.setString(2, e.getType());
+        ps.setString(3, e.getPays());
+        ps.setString(4, e.getVille());
+        ps.setString(5, e.getAdresse());
+        ps.setObject(6, e.getLatitude());
+        ps.setObject(7, e.getLongitude());
+        ps.setString(8, e.getContact());
+        ps.setString(9, e.getEmail());
+        ps.setString(10, e.getTelephone());
+        ps.setString(11, e.getSiteWeb());
+        ps.setString(12, e.getSpecialites() != null ? String.join(",", e.getSpecialites()) : null);
+        ps.setBoolean(13, e.isPartenaire());
+        ps.setObject(14, e.getDatePartenariat());
+        ps.setString(15, e.getDescription());
+        ps.setBoolean(16, e.isActif());
+    }
+
+    private Ecole mapper(ResultSet rs) throws SQLException {
+        Ecole e = new Ecole();
+
+        e.setId(rs.getLong("id"));
+        e.setNom(rs.getString("nom"));
+        e.setType(rs.getString("type"));
+        e.setPays(rs.getString("pays"));
+        e.setVille(rs.getString("ville"));
+        e.setAdresse(rs.getString("adresse"));
+
+        // ✅ correction DECIMAL → Double
+        BigDecimal lat = rs.getBigDecimal("latitude");
+        if (lat != null) e.setLatitude(lat.doubleValue());
+
+        BigDecimal lon = rs.getBigDecimal("longitude");
+        if (lon != null) e.setLongitude(lon.doubleValue());
+
+        e.setContact(rs.getString("contact"));
+        e.setEmail(rs.getString("email"));
+        e.setTelephone(rs.getString("telephone"));
+        e.setSiteWeb(rs.getString("site_web"));
+
+        String sp = rs.getString("specialites");
+        if (sp != null && !sp.isEmpty()) {
+            e.setSpecialites(new ArrayList<>(Arrays.asList(sp.split(","))));
         }
+
+        e.setPartenaire(rs.getBoolean("partenaire"));
+
+        // ✅ correction DATE
+        Date date = rs.getDate("date_partenariat");
+        if (date != null) {
+            e.setDatePartenariat(date.toLocalDate());
+        }
+
+        e.setDescription(rs.getString("description"));
+        e.setActif(rs.getBoolean("actif"));
+
+        return e;
     }
 }

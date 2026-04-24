@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="application.stagiaires.StagiairesViewController"
+            styleClass="view-root">
+
+    <!-- ===== BARRE SUPERIEURE ===================================== -->
+    <top>
+        <VBox styleClass="control-bar" spacing="10">
+            <padding><Insets top="15" bottom="10" left="20" right="20"/></padding>
+
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="Gestion des Stagiaires" styleClass="view-title">
+                    <font><Font name="System Bold" size="18"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="+ Nouveau Stagiaire" styleClass="btn-primary"
+                        onAction="#handleNouveauStagiaire"/>
+                <Button text="Importer" styleClass="btn-secondary" onAction="#handleImporter"/>
+                <Button text="Exporter" styleClass="btn-secondary" onAction="#handleExporter"/>
+            </HBox>
+
+            <!-- Filtres -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtRecherche" promptText="Rechercher (nom, matricule, email…)"
+                           prefWidth="280" styleClass="search-field"/>
+
+                <Label text="Spécialité :"/>
+                <ComboBox fx:id="cmbSpecialite" prefWidth="160" onAction="#handleFiltreChange"/>
+
+                <Label text="Langue :"/>
+                <ComboBox fx:id="cmbLangue" prefWidth="120" onAction="#handleFiltreChange"/>
+
+                <Label text="Statut :"/>
+                <ComboBox fx:id="cmbStatut" prefWidth="110" onAction="#handleFiltreChange"/>
+
+                <Button text="Réinitialiser" styleClass="btn-secondary" onAction="#handleReinitialiser"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblTotal" text="0 stagiaire(s)" styleClass="label-count"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- ===== CONTENU PRINCIPAL ===================================== -->
+    <center>
+        <SplitPane dividerPositions="0.6" styleClass="main-split">
+
+            <!-- Tableau -->
+            <VBox spacing="0" styleClass="table-container">
+
+                <TableView fx:id="tableStagiaires" VBox.vgrow="ALWAYS" styleClass="data-table">
+                    <columns>
+                        <TableColumn fx:id="colMatricule"  text="Matricule"   prefWidth="110"/>
+                        <TableColumn fx:id="colNom"        text="Nom"         prefWidth="130"/>
+                        <TableColumn fx:id="colPrenom"     text="Prénom"      prefWidth="130"/>
+                        <TableColumn fx:id="colSpecialite" text="Spécialité"  prefWidth="150"/>
+                        <TableColumn fx:id="colLangue"     text="Langue"      prefWidth="90"/>
+                        <TableColumn fx:id="colStatut"     text="Statut"      prefWidth="80"/>
+                        <TableColumn fx:id="colActions"    text="Actions"     prefWidth="90"/>
+                    </columns>
+                    <placeholder><Label text="Aucun stagiaire trouvé"/></placeholder>
+                </TableView>
+
+                <!-- Pagination -->
+                <HBox spacing="10" alignment="CENTER" styleClass="pagination-bar">
+                    <padding><Insets top="8" bottom="8" left="10" right="10"/></padding>
+                    <Button text="◀" styleClass="btn-page" onAction="#handlePagePrecedente"/>
+                    <Label fx:id="lblPage" text="Page 1 / 1"/>
+                    <Button text="▶" styleClass="btn-page" onAction="#handlePageSuivante"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="Lignes par page :"/>
+                    <ComboBox fx:id="cmbPageSize" prefWidth="80">
+                        <items><javafx.collections.FXCollections fx:factory="observableArrayList">
+                            <String fx:value="10"/>
+                            <String fx:value="25"/>
+                            <String fx:value="50"/>
+                            <String fx:value="100"/>
+                        </javafx.collections.FXCollections></items>
+                    </ComboBox>
+                </HBox>
+            </VBox>
+
+            <!-- Formulaire / Détails -->
+            <ScrollPane fitToWidth="true" styleClass="form-scroll">
+                <VBox spacing="15" styleClass="form-panel">
+                    <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                    <!-- En-tête formulaire -->
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label fx:id="lblFormTitle" text="Détails du Stagiaire" styleClass="form-title">
+                            <font><Font name="System Bold" size="15"/></font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnAnnuler" text="Annuler" styleClass="btn-secondary"
+                                visible="false" onAction="#handleAnnuler"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <!-- Identité -->
+                    <Label text="Identification" styleClass="section-header"/>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Matricule"/>
+                            <TextField fx:id="txtMatricule" promptText="Auto-généré" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Sexe"/>
+                            <ComboBox fx:id="cmbSexe" maxWidth="Infinity"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Nom *"/>
+                            <TextField fx:id="txtNom" promptText="Nom de famille" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Prénom *"/>
+                            <TextField fx:id="txtPrenom" promptText="Prénom" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Date de naissance"/>
+                            <DatePicker fx:id="dpDateNaissance" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Lieu de naissance"/>
+                            <TextField fx:id="txtLieuNaissance" promptText="Lieu" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="5">
+                        <Label text="Nationalité"/>
+                        <TextField fx:id="txtNationalite" promptText="Nationalité" disable="true"/>
+                    </VBox>
+
+                    <Separator/>
+                    <Label text="Contact" styleClass="section-header"/>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Email"/>
+                            <TextField fx:id="txtEmail" promptText="email@exemple.com" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Téléphone"/>
+                            <TextField fx:id="txtTelephone" promptText="+237 6XX XXX XXX" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="5">
+                        <Label text="Adresse"/>
+                        <TextArea fx:id="txtAdresse" promptText="Adresse complète" prefRowCount="2"
+                                  disable="true" wrapText="true"/>
+                    </VBox>
+
+                    <Separator/>
+                    <Label text="Formation" styleClass="section-header"/>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Spécialité"/>
+                            <ComboBox fx:id="cmbFormSpecialite" maxWidth="Infinity" disable="true" editable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Langue"/>
+                            <ComboBox fx:id="cmbFormLangue" maxWidth="Infinity" disable="true" editable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Niveau d'étude"/>
+                            <ComboBox fx:id="cmbNiveauEtude" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Type de formation"/>
+                            <ComboBox fx:id="cmbTypeFormation" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="5">
+                        <Label text="Diplôme"/>
+                        <TextField fx:id="txtDiplome" promptText="Intitulé du diplôme" disable="true"/>
+                    </VBox>
+
+                    <Separator/>
+                    <Label text="Remarques" styleClass="section-header"/>
+
+                    <TextArea fx:id="txtRemarques" prefRowCount="3" wrapText="true"
+                              promptText="Observations, notes…" disable="true"/>
+
+                    <!-- Boutons action -->
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button fx:id="btnSupprimerForm" text="Supprimer" styleClass="btn-danger"
+                                visible="false" onAction="#handleSupprimerForm"/>
+                        <Button fx:id="btnEnregistrer" text="Enregistrer" styleClass="btn-primary"
+                                visible="false" onAction="#handleEnregistrer"/>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+
+        </SplitPane>
+    </center>
+</BorderPane>

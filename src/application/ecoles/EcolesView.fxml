@@ -6,8 +6,8 @@
 <?import javafx.scene.text.*?>
 <?import java.lang.String?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="application.views.ecoles.EcolesViewController" 
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="application.ecoles.EcolesViewController" 
             styleClass="ecoles-view">
     
     <!-- Barre supérieure -->

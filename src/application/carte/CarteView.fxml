@@ -6,8 +6,8 @@
 <?import javafx.scene.text.*?>
 <?import java.lang.String?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="application.views.carte.CarteViewController" styleClass="carte-view">
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="application.carte.CarteViewController" styleClass="carte-view">
     
     <!-- Barre de contrôle supérieure -->
     <top>
@@ -153,7 +153,10 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     
                     <!-- Indicateur de chargement -->
-                    <ProgressIndicator fx:id="progressLoading" prefSize="20" visible="false"/>
+                    <ProgressIndicator fx:id="progressLoading"
+											                   prefWidth="20"
+											                   prefHeight="20"
+											                   visible="false"/>
                     <Label fx:id="lblMapInfo" text="Chargement..." styleClass="map-info"/>
                 </HBox>
             </VBox>

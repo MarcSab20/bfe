@@ -1,399 +1,226 @@
-package application.services;
+package application.stagiaires;
 
-import application.models.Stagiaire;
-import application.DatabaseManager;
+import application.utils.DatabaseManager;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service pour la gestion des stagiaires
- */
 public class StagiaireService {
-    
-    /**
-     * Obtenir tous les stagiaires actifs
-     */
+
+    // ------------------------------------------------------------------ lecture
+
     public List<Stagiaire> getStagiairesActifs() {
-        List<Stagiaire> stagiaires = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stagiaires WHERE actif = true ORDER BY nom, prenom";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                stagiaires.add(mapResultSetToStagiaire(rs));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return stagiaires;
+        List<Stagiaire> list = new ArrayList<>();
+        String sql = "SELECT * FROM stagiaires WHERE actif = true ORDER BY nom, prenom";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Obtenir un stagiaire par ID
-     */
+
+    public List<Stagiaire> getTousStagiaires() {
+        List<Stagiaire> list = new ArrayList<>();
+        String sql = "SELECT * FROM stagiaires ORDER BY nom, prenom";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapper(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public List<Stagiaire> rechercherStagiaires(String terme) {
+        List<Stagiaire> list = new ArrayList<>();
+        String like = "%" + terme.toLowerCase() + "%";
+        String sql = "SELECT * FROM stagiaires WHERE actif = true AND " +
+                     "(LOWER(nom) LIKE ? OR LOWER(prenom) LIKE ? OR LOWER(matricule) LIKE ? " +
+                     " OR LOWER(email) LIKE ?) ORDER BY nom, prenom";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, like); ps.setString(2, like);
+            ps.setString(3, like); ps.setString(4, like);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapper(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public Stagiaire getStagiaireParId(Long id) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stagiaires WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                Stagiaire stagiaire = mapResultSetToStagiaire(rs);
-                rs.close();
-                stmt.close();
-                return stagiaire;
+        String sql = "SELECT * FROM stagiaires WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapper(rs);
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
-    
-    /**
-     * Obtenir un stagiaire par matricule
-     */
+
     public Stagiaire getStagiaireParMatricule(String matricule) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT * FROM stagiaires WHERE matricule = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, matricule);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                Stagiaire stagiaire = mapResultSetToStagiaire(rs);
-                rs.close();
-                stmt.close();
-                return stagiaire;
+        String sql = "SELECT * FROM stagiaires WHERE matricule = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, matricule);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapper(rs);
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
-    
-    /**
-     * Compter les stagiaires actifs
-     */
+
     public int compterStagiairesActifs() {
-        int count = 0;
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT COUNT(*) as total FROM stagiaires WHERE actif = true";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                count = rs.getInt("total");
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return count;
+        String sql = "SELECT COUNT(*) FROM stagiaires WHERE actif = true";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
     }
-    
-    /**
-     * Compter les stagiaires par école
-     */
+
     public int compterStagiairesParEcole(Long ecoleId) {
-        int count = 0;
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT COUNT(*) as total FROM stages " +
-                        "WHERE ecole_id = ? AND statut = 'En cours'";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, ecoleId);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                count = rs.getInt("total");
+        String sql = "SELECT COUNT(*) FROM stages WHERE ecole_id = ? AND statut = 'En cours'";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, ecoleId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
             }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return count;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
     }
-    
-    /**
-     * Obtenir toutes les spécialités
-     */
+
     public List<String> getToutesSpecialites() {
-        List<String> specialites = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT DISTINCT specialite FROM stagiaires " +
-                        "WHERE specialite IS NOT NULL AND specialite != '' " +
-                        "ORDER BY specialite";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                specialites.add(rs.getString("specialite"));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return specialites;
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT specialite FROM stagiaires WHERE specialite IS NOT NULL AND specialite != '' ORDER BY specialite";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(rs.getString(1));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Obtenir toutes les langues
-     */
+
     public List<String> getToutesLangues() {
-        List<String> langues = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT DISTINCT langue FROM stagiaires " +
-                        "WHERE langue IS NOT NULL AND langue != '' " +
-                        "ORDER BY langue";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                langues.add(rs.getString("langue"));
-            }
-            
-            rs.close();
-            stmt.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return langues;
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT langue FROM stagiaires WHERE langue IS NOT NULL AND langue != '' ORDER BY langue";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(rs.getString(1));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
-    
-    /**
-     * Mapper ResultSet vers Stagiaire
-     */
-    private Stagiaire mapResultSetToStagiaire(ResultSet rs) throws SQLException {
-        Stagiaire stagiaire = new Stagiaire();
-        stagiaire.setId(rs.getLong("id"));
-        stagiaire.setMatricule(rs.getString("matricule"));
-        stagiaire.setNom(rs.getString("nom"));
-        stagiaire.setPrenom(rs.getString("prenom"));
-        stagiaire.setDateNaissance(rs.getObject("date_naissance", java.time.LocalDate.class));
-        stagiaire.setLieuNaissance(rs.getString("lieu_naissance"));
-        stagiaire.setNationalite(rs.getString("nationalite"));
-        stagiaire.setSexe(rs.getString("sexe"));
-        stagiaire.setEmail(rs.getString("email"));
-        stagiaire.setTelephone(rs.getString("telephone"));
-        stagiaire.setAdresse(rs.getString("adresse"));
-        stagiaire.setSpecialite(rs.getString("specialite"));
-        stagiaire.setLangue(rs.getString("langue"));
-        stagiaire.setNiveauEtude(rs.getString("niveau_etude"));
-        stagiaire.setDiplome(rs.getString("diplome"));
-        stagiaire.setTypeFormation(rs.getString("type_formation"));
-        stagiaire.setActif(rs.getBoolean("actif"));
-        stagiaire.setDateInscription(rs.getObject("date_inscription", java.time.LocalDate.class));
-        stagiaire.setPhoto(rs.getString("photo"));
-        stagiaire.setRemarques(rs.getString("remarques"));
-        
-        return stagiaire;
-    }
-    
-    /**
-     * Créer un stagiaire
-     */
-    public boolean creerStagiaire(Stagiaire stagiaire) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "INSERT INTO stagiaires (matricule, nom, prenom, date_naissance, lieu_naissance, " +
-                        "nationalite, sexe, email, telephone, adresse, specialite, langue, niveau_etude, " +
-                        "diplome, type_formation, actif, date_inscription, photo, remarques) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stmt.setString(1, stagiaire.getMatricule());
-            stmt.setString(2, stagiaire.getNom());
-            stmt.setString(3, stagiaire.getPrenom());
-            stmt.setObject(4, stagiaire.getDateNaissance());
-            stmt.setString(5, stagiaire.getLieuNaissance());
-            stmt.setString(6, stagiaire.getNationalite());
-            stmt.setString(7, stagiaire.getSexe());
-            stmt.setString(8, stagiaire.getEmail());
-            stmt.setString(9, stagiaire.getTelephone());
-            stmt.setString(10, stagiaire.getAdresse());
-            stmt.setString(11, stagiaire.getSpecialite());
-            stmt.setString(12, stagiaire.getLangue());
-            stmt.setString(13, stagiaire.getNiveauEtude());
-            stmt.setString(14, stagiaire.getDiplome());
-            stmt.setString(15, stagiaire.getTypeFormation());
-            stmt.setBoolean(16, stagiaire.isActif());
-            stmt.setObject(17, stagiaire.getDateInscription());
-            stmt.setString(18, stagiaire.getPhoto());
-            stmt.setString(19, stagiaire.getRemarques());
-            
-            int result = stmt.executeUpdate();
-            
-            // Récupérer l'ID généré
-            if (result > 0) {
-                ResultSet generatedKeys = stmt.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    stagiaire.setId(generatedKeys.getLong(1));
+
+    // ------------------------------------------------------------------ écriture
+
+    public boolean creerStagiaire(Stagiaire s) {
+        String sql = "INSERT INTO stagiaires (matricule,nom,prenom,date_naissance,lieu_naissance," +
+                     "nationalite,sexe,email,telephone,adresse,specialite,langue,niveau_etude," +
+                     "diplome,type_formation,actif,date_inscription,photo,remarques) " +
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            remplir(ps, s);
+            if (ps.executeUpdate() > 0) {
+                try (ResultSet gk = ps.getGeneratedKeys()) {
+                    if (gk.next()) s.setId(gk.getLong(1));
                 }
-                generatedKeys.close();
+                return true;
             }
-            
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Mettre à jour un stagiaire
-     */
-    public boolean mettreAJourStagiaire(Stagiaire stagiaire) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE stagiaires SET matricule = ?, nom = ?, prenom = ?, date_naissance = ?, " +
-                        "lieu_naissance = ?, nationalite = ?, sexe = ?, email = ?, telephone = ?, " +
-                        "adresse = ?, specialite = ?, langue = ?, niveau_etude = ?, diplome = ?, " +
-                        "type_formation = ?, actif = ?, date_inscription = ?, photo = ?, remarques = ? " +
-                        "WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, stagiaire.getMatricule());
-            stmt.setString(2, stagiaire.getNom());
-            stmt.setString(3, stagiaire.getPrenom());
-            stmt.setObject(4, stagiaire.getDateNaissance());
-            stmt.setString(5, stagiaire.getLieuNaissance());
-            stmt.setString(6, stagiaire.getNationalite());
-            stmt.setString(7, stagiaire.getSexe());
-            stmt.setString(8, stagiaire.getEmail());
-            stmt.setString(9, stagiaire.getTelephone());
-            stmt.setString(10, stagiaire.getAdresse());
-            stmt.setString(11, stagiaire.getSpecialite());
-            stmt.setString(12, stagiaire.getLangue());
-            stmt.setString(13, stagiaire.getNiveauEtude());
-            stmt.setString(14, stagiaire.getDiplome());
-            stmt.setString(15, stagiaire.getTypeFormation());
-            stmt.setBoolean(16, stagiaire.isActif());
-            stmt.setObject(17, stagiaire.getDateInscription());
-            stmt.setString(18, stagiaire.getPhoto());
-            stmt.setString(19, stagiaire.getRemarques());
-            stmt.setLong(20, stagiaire.getId());
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+
+    public boolean mettreAJourStagiaire(Stagiaire s) {
+        String sql = "UPDATE stagiaires SET matricule=?,nom=?,prenom=?,date_naissance=?," +
+                     "lieu_naissance=?,nationalite=?,sexe=?,email=?,telephone=?,adresse=?," +
+                     "specialite=?,langue=?,niveau_etude=?,diplome=?,type_formation=?,actif=?," +
+                     "date_inscription=?,photo=?,remarques=? WHERE id=?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            remplir(ps, s);
+            ps.setLong(20, s.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
-    
-    /**
-     * Supprimer un stagiaire (suppression logique)
-     */
+
     public boolean supprimerStagiaire(Long id) {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "UPDATE stagiaires SET actif = false WHERE id = ?";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            
-            int result = stmt.executeUpdate();
-            stmt.close();
-            
-            return result > 0;
-            
+        String sql = "UPDATE stagiaires SET actif = false WHERE id = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    public String genererMatricule() {
+        String sql = "SELECT MAX(CAST(SUBSTRING(matricule, 3) AS UNSIGNED)) FROM stagiaires WHERE matricule LIKE 'ST%'";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            int max = rs.next() ? rs.getInt(1) : 0;
+            return String.format("ST%06d", max + 1);
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return "ST" + Year.now().getValue() + String.format("%03d", (int)(Math.random() * 1000));
         }
     }
-    
-    /**
-     * Générer un nouveau matricule
-     */
-    public String genererMatricule() {
-        try {
-            Connection conn = DatabaseManager.getConnection();
-            String sql = "SELECT MAX(CAST(SUBSTRING(matricule, 3) AS UNSIGNED)) as max_num " +
-                        "FROM stagiaires WHERE matricule LIKE 'ST%'";
-            
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            
-            int maxNum = 0;
-            if (rs.next()) {
-                maxNum = rs.getInt("max_num");
-            }
-            
-            rs.close();
-            stmt.close();
-            
-            return String.format("ST%06d", maxNum + 1);
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            // En cas d'erreur, utiliser l'année et un nombre aléatoire
-            return "ST" + java.time.Year.now().getValue() + 
-                   String.format("%03d", (int)(Math.random() * 1000));
-        }
+
+    // ------------------------------------------------------------------ helper
+
+    private void remplir(PreparedStatement ps, Stagiaire s) throws SQLException {
+        ps.setString(1, s.getMatricule());
+        ps.setString(2, s.getNom());
+        ps.setString(3, s.getPrenom());
+        ps.setObject(4, s.getDateNaissance());
+        ps.setString(5, s.getLieuNaissance());
+        ps.setString(6, s.getNationalite());
+        ps.setString(7, s.getSexe());
+        ps.setString(8, s.getEmail());
+        ps.setString(9, s.getTelephone());
+        ps.setString(10, s.getAdresse());
+        ps.setString(11, s.getSpecialite());
+        ps.setString(12, s.getLangue());
+        ps.setString(13, s.getNiveauEtude());
+        ps.setString(14, s.getDiplome());
+        ps.setString(15, s.getTypeFormation());
+        ps.setBoolean(16, s.isActif());
+        ps.setObject(17, s.getDateInscription());
+        ps.setString(18, s.getPhoto());
+        ps.setString(19, s.getRemarques());
+    }
+
+    private Stagiaire mapper(ResultSet rs) throws SQLException {
+        Stagiaire s = new Stagiaire();
+        s.setId(rs.getLong("id"));
+        s.setMatricule(rs.getString("matricule"));
+        s.setNom(rs.getString("nom"));
+        s.setPrenom(rs.getString("prenom"));
+        s.setDateNaissance(rs.getObject("date_naissance", java.time.LocalDate.class));
+        s.setLieuNaissance(rs.getString("lieu_naissance"));
+        s.setNationalite(rs.getString("nationalite"));
+        s.setSexe(rs.getString("sexe"));
+        s.setEmail(rs.getString("email"));
+        s.setTelephone(rs.getString("telephone"));
+        s.setAdresse(rs.getString("adresse"));
+        s.setSpecialite(rs.getString("specialite"));
+        s.setLangue(rs.getString("langue"));
+        s.setNiveauEtude(rs.getString("niveau_etude"));
+        s.setDiplome(rs.getString("diplome"));
+        s.setTypeFormation(rs.getString("type_formation"));
+        s.setActif(rs.getBoolean("actif"));
+        s.setDateInscription(rs.getObject("date_inscription", java.time.LocalDate.class));
+        s.setPhoto(rs.getString("photo"));
+        s.setRemarques(rs.getString("remarques"));
+        return s;
     }
 }

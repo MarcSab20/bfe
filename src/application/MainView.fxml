@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="application.MainController"
+            prefWidth="1280" prefHeight="800"
+            styleClass="main-root">
+
+    <!-- ===== HEADER ============================================== -->
+    <top>
+        <HBox styleClass="app-header" alignment="CENTER_LEFT" spacing="15">
+            <padding><Insets top="12" bottom="12" left="20" right="20"/></padding>
+
+            <Label text="BFE" styleClass="app-logo">
+                <font><Font name="System Bold" size="24"/></font>
+            </Label>
+            <Label text="Gestion des Stages et des Écoles" styleClass="app-subtitle"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Alertes -->
+            <StackPane styleClass="alert-btn-wrapper">
+                <Button text="🔔" styleClass="btn-icon" onAction="#handleShowAlertes">
+				    <tooltip>
+				        <Tooltip text="Alertes"/>
+				    </tooltip>
+				</Button>
+                <Label fx:id="lblAlertCount" text="" styleClass="badge-count" visible="false"/>
+            </StackPane>
+
+            <Label fx:id="lblUserInfo" text="" styleClass="header-user"/>
+        </HBox>
+    </top>
+
+    <!-- ===== SIDEBAR + CONTENU =================================== -->
+    <center>
+        <HBox spacing="0">
+
+            <!-- Sidebar navigation -->
+            <VBox fx:id="sidebarNav" styleClass="sidebar" spacing="2" minWidth="220" prefWidth="220">
+                <padding><Insets top="20" bottom="20" left="10" right="10"/></padding>
+
+                <Label text="Navigation" styleClass="sidebar-section-label">
+                    <padding><Insets bottom="8"/></padding>
+                </Label>
+
+                <Button text="📊  Tableau de bord"  styleClass="nav-item" maxWidth="Infinity"
+                        userData="dashboard" onAction="#handleShowTableauDeBord"/>
+                <Button text="🏫  Écoles"           styleClass="nav-item" maxWidth="Infinity"
+                        userData="ecoles"    onAction="#handleShowEcoles"/>
+                <Button text="👨‍🎓  Stagiaires"      styleClass="nav-item" maxWidth="Infinity"
+                        userData="stagiaires" onAction="#handleShowStagiaires"/>
+                <Button text="📋  Stages"           styleClass="nav-item" maxWidth="Infinity"
+                        userData="stages"    onAction="#handleShowStages"/>
+                <Button text="📍  Carte"            styleClass="nav-item" maxWidth="Infinity"
+                        userData="carte"     onAction="#handleShowCarte"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <Separator/>
+                <Button text="⚙  Paramètres"       styleClass="nav-item" maxWidth="Infinity"
+                        userData="parametres" onAction="#handleShowParametres"/>
+            </VBox>
+
+            <!-- Zone de contenu principale -->
+            <StackPane fx:id="contentArea" HBox.hgrow="ALWAYS" styleClass="content-area">
+                <Label text="Chargement…" styleClass="placeholder-label"/>
+            </StackPane>
+
+        </HBox>
+    </center>
+
+</BorderPane>

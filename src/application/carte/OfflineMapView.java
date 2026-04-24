@@ -344,6 +344,13 @@ public class OfflineMapView extends Pane {
         this.markerClickListener = listener;
     }
     
+    public void setZoom(double newZoom) {
+        this.zoom = Math.max(0.5, Math.min(newZoom, 10.0));
+        redraw();
+    }
+
+    public double getZoom() { return zoom; }
+    
     // Classes internes
     public static class MapMarker {
         public double lat;
