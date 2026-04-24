@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.chart.*?>
+<?import java.lang.String?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="application.views.statistiques.StatistiquesViewController" 
+            styleClass="statistiques-view">
+    
+    <!-- Barre supérieure -->
+    <top>
+        <VBox spacing="10" styleClass="control-bar">
+            <padding>
+                <Insets top="15" bottom="15" left="20" right="20"/>
+            </padding>
+            
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="📊 Tableau de Bord et Statistiques" styleClass="view-title">
+                    <font>
+                        <Font name="System Bold" size="18"/>
+                    </font>
+                </Label>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <!-- Sélection de période -->
+                <Label text="Période:">
+                    <font>
+                        <Font name="System Bold" size="12"/>
+                    </font>
+                </Label>
+                <ComboBox fx:id="cmbPeriode" prefWidth="150" onAction="#handleChangePeriode">
+                    <items>
+                        <javafx.collections.FXCollections fx:factory="observableArrayList">
+                            <String fx:value="📅 Ce mois"/>
+                            <String fx:value="📅 Ce trimestre"/>
+                            <String fx:value="📅 Ce semestre"/>
+                            <String fx:value="📅 Cette année"/>
+                            <String fx:value="📅 Toutes périodes"/>
+                            <String fx:value="📅 Personnalisé"/>
+                        </javafx.collections.FXCollections>
+                    </items>
+                </ComboBox>
+                
+                <Button text="🔄 Actualiser" onAction="#handleActualiser" styleClass="btn-action"/>
+                <Button text="📥 Exporter" onAction="#handleExporter" styleClass="btn-action"/>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- Contenu principal -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="stats-scroll">
+            <VBox spacing="20" styleClass="stats-container">
+                <padding>
+                    <Insets top="20" bottom="20" left="20" right="20"/>
+                </padding>
+                
+                <!-- Cartes de statistiques principales -->
+                <HBox spacing="15" styleClass="stats-cards">
+                    <!-- Total Stagiaires -->
+                    <VBox styleClass="stat-card card-blue" HBox.hgrow="ALWAYS">
+                        <padding>
+                            <Insets top="20" bottom="20" left="20" right="20"/>
+                        </padding>
+                        
+                        <Label text="👥" styleClass="card-icon">
+                            <font>
+                                <Font size="32"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblTotalStagiaires" text="0" styleClass="card-number">
+                            <font>
+                                <Font name="System Bold" size="36"/>
+                            </font>
+                        </Label>
+                        <Label text="Stagiaires Actifs" styleClass="card-label">
+                            <font>
+                                <Font size="14"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblEvolutionStagiaires" text="↗ +0% vs période précédente" 
+                               styleClass="card-trend"/>
+                    </VBox>
+                    
+                    <!-- Total Écoles -->
+                    <VBox styleClass="stat-card card-green" HBox.hgrow="ALWAYS">
+                        <padding>
+                            <Insets top="20" bottom="20" left="20" right="20"/>
+                        </padding>
+                        
+                        <Label text="🏫" styleClass="card-icon">
+                            <font>
+                                <Font size="32"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblTotalEcoles" text="0" styleClass="card-number">
+                            <font>
+                                <Font name="System Bold" size="36"/>
+                            </font>
+                        </Label>
+                        <Label text="Écoles Partenaires" styleClass="card-label">
+                            <font>
+                                <Font size="14"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblEvolutionEcoles" text="→ 0% vs période précédente" 
+                               styleClass="card-trend"/>
+                    </VBox>
+                    
+                    <!-- Stages en cours -->
+                    <VBox styleClass="stat-card card-orange" HBox.hgrow="ALWAYS">
+                        <padding>
+                            <Insets top="20" bottom="20" left="20" right="20"/>
+                        </padding>
+                        
+                        <Label text="📋" styleClass="card-icon">
+                            <font>
+                                <Font size="32"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblStagesEnCours" text="0" styleClass="card-number">
+                            <font>
+                                <Font name="System Bold" size="36"/>
+                            </font>
+                        </Label>
+                        <Label text="Stages en Cours" styleClass="card-label">
+                            <font>
+                                <Font size="14"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblDureeeMoyenne" text="Durée moyenne: 0 mois" 
+                               styleClass="card-trend"/>
+                    </VBox>
+                    
+                    <!-- Retours imminents -->
+                    <VBox styleClass="stat-card card-red" HBox.hgrow="ALWAYS">
+                        <padding>
+                            <Insets top="20" bottom="20" left="20" right="20"/>
+                        </padding>
+                        
+                        <Label text="⚠️" styleClass="card-icon">
+                            <font>
+                                <Font size="32"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblRetoursImminents" text="0" styleClass="card-number">
+                            <font>
+                                <Font name="System Bold" size="36"/>
+                            </font>
+                        </Label>
+                        <Label text="Retours &lt; 30 jours" styleClass="card-label">
+                            <font>
+                                <Font size="14"/>
+                            </font>
+                        </Label>
+                        <Label text="Nécessite attention" styleClass="card-trend"/>
+                    </VBox>
+                </HBox>
+                
+                <!-- Graphiques principaux -->
+                <GridPane hgap="15" vgap="15">
+                    <!-- Répartition par type d'école -->
+                    <VBox styleClass="chart-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                        <padding>
+                            <Insets top="15" bottom="15" left="15" right="15"/>
+                        </padding>
+                        
+                        <Label text="🏫 Répartition par Type d'École" styleClass="chart-title">
+                            <font>
+                                <Font name="System Bold" size="14"/>
+                            </font>
+                        </Label>
+                        
+                        <PieChart fx:id="chartTypesEcoles" prefHeight="300" VBox.vgrow="ALWAYS">
+                            <VBox.margin>
+                                <Insets top="10"/>
+                            </VBox.margin>
+                        </PieChart>
+                    </VBox>
+                    
+                    <!-- Répartition géographique -->
+                    <VBox styleClass="chart-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <padding>
+                            <Insets top="15" bottom="15" left="15" right="15"/>
+                        </padding>
+                        
+                        <Label text="🌍 Répartition Géographique" styleClass="chart-title">
+                            <font>
+                                <Font name="System Bold" size="14"/>
+                            </font>
+                        </Label>
+                        
+                        <PieChart fx:id="chartPays" prefHeight="300" VBox.vgrow="ALWAYS">
+                            <VBox.margin>
+                                <Insets top="10"/>
+                            </VBox.margin>
+                        </PieChart>
+                    </VBox>
+                    
+                    <!-- Évolution temporelle -->
+                    <VBox styleClass="chart-card" GridPane.columnIndex="0" GridPane.rowIndex="1" 
+                          GridPane.columnSpan="2">
+                        <padding>
+                            <Insets top="15" bottom="15" left="15" right="15"/>
+                        </padding>
+                        
+                        <Label text="📈 Évolution des Stagiaires" styleClass="chart-title">
+                            <font>
+                                <Font name="System Bold" size="14"/>
+                            </font>
+                        </Label>
+                        
+                        <LineChart fx:id="chartEvolution" prefHeight="300" VBox.vgrow="ALWAYS">
+                            <xAxis>
+                                <CategoryAxis label="Mois"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Nombre de stagiaires"/>
+                            </yAxis>
+                            <VBox.margin>
+                                <Insets top="10"/>
+                            </VBox.margin>
+                        </LineChart>
+                    </VBox>
+                    
+                    <!-- Spécialités -->
+                    <VBox styleClass="chart-card" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                        <padding>
+                            <Insets top="15" bottom="15" left="15" right="15"/>
+                        </padding>
+                        
+                        <Label text="🎓 Top Spécialités" styleClass="chart-title">
+                            <font>
+                                <Font name="System Bold" size="14"/>
+                            </font>
+                        </Label>
+                        
+                        <BarChart fx:id="chartSpecialites" prefHeight="300" VBox.vgrow="ALWAYS">
+                            <xAxis>
+                                <CategoryAxis label="Spécialités"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Nombre"/>
+                            </yAxis>
+                            <VBox.margin>
+                                <Insets top="10"/>
+                            </VBox.margin>
+                        </BarChart>
+                    </VBox>
+                    
+                    <!-- Langues -->
+                    <VBox styleClass="chart-card" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                        <padding>
+                            <Insets top="15" bottom="15" left="15" right="15"/>
+                        </padding>
+                        
+                        <Label text="🌐 Répartition par Langue" styleClass="chart-title">
+                            <font>
+                                <Font name="System Bold" size="14"/>
+                            </font>
+                        </Label>
+                        
+                        <BarChart fx:id="chartLangues" prefHeight="300" VBox.vgrow="ALWAYS">
+                            <xAxis>
+                                <CategoryAxis label="Langues"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Nombre"/>
+                            </yAxis>
+                            <VBox.margin>
+                                <Insets top="10"/>
+                            </VBox.margin>
+                        </BarChart>
+                    </VBox>
+                </GridPane>
+                
+                <!-- Tableau récapitulatif -->
+                <VBox styleClass="table-card">
+                    <padding>
+                        <Insets top="15" bottom="15" left="15" right="15"/>
+                    </padding>
+                    
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="📑 Détails par École" styleClass="chart-title">
+                            <font>
+                                <Font name="System Bold" size="14"/>
+                            </font>
+                        </Label>
+                        
+                        <Region HBox.hgrow="ALWAYS"/>
+                        
+                        <TextField fx:id="txtRechercheTableau" promptText="🔍 Rechercher..." 
+                                   prefWidth="200"/>
+                    </HBox>
+                    
+                    <TableView fx:id="tableEcoles" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn text="École" prefWidth="200" fx:id="colEcole"/>
+                            <TableColumn text="Type" prefWidth="120" fx:id="colType"/>
+                            <TableColumn text="Pays" prefWidth="120" fx:id="colPays"/>
+                            <TableColumn text="Ville" prefWidth="120" fx:id="colVille"/>
+                            <TableColumn text="Stagiaires" prefWidth="100" fx:id="colNbStagiaires"/>
+                            <TableColumn text="Taux remplissage" prefWidth="120" fx:id="colTaux"/>
+                            <TableColumn text="Partenaire" prefWidth="100" fx:id="colPartenaire"/>
+                        </columns>
+                        <VBox.margin>
+                            <Insets top="10"/>
+                        </VBox.margin>
+                    </TableView>
+                </VBox>
+                
+            </VBox>
+        </ScrollPane>
+    </center>
+    
+</BorderPane>

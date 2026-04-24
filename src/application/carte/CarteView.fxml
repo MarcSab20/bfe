@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.String?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="application.views.carte.CarteViewController" styleClass="carte-view">
+    
+    <!-- Barre de contrôle supérieure -->
+    <top>
+        <VBox spacing="10" styleClass="control-bar">
+            <padding>
+                <Insets top="15" bottom="15" left="20" right="20"/>
+            </padding>
+            
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <!-- Titre -->
+                <Label text="📍 Carte Interactive des Écoles et Stagiaires" styleClass="view-title">
+                    <font>
+                        <Font name="System Bold" size="18"/>
+                    </font>
+                </Label>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <!-- Indicateur de connexion -->
+                <HBox spacing="5" alignment="CENTER">
+                    <Label fx:id="lblConnexion" text="●" styleClass="status-indicator">
+                        <font>
+                            <Font size="16"/>
+                        </font>
+                    </Label>
+                    <Label text="Mode Offline" styleClass="status-text">
+                        <font>
+                            <Font size="11"/>
+                        </font>
+                    </Label>
+                </HBox>
+            </HBox>
+            
+            <!-- Filtres -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Filtres:">
+                    <font>
+                        <Font name="System Bold" size="12"/>
+                    </font>
+                </Label>
+                
+                <ComboBox fx:id="cmbTypeAffichage" promptText="Type d'affichage" 
+                          styleClass="filter-combo" prefWidth="180" onAction="#handleFiltreChange">
+                    <items>
+                        <javafx.collections.FXCollections fx:factory="observableArrayList">
+                            <String fx:value="🌍 Tout Afficher"/>
+                            <String fx:value="🏫 Écoles Professionnelles"/>
+                            <String fx:value="🎓 Écoles Académiques"/>
+                            <String fx:value="🤝 Écoles Partenaires"/>
+                            <String fx:value="👥 Stagiaires Actifs"/>
+                            <String fx:value="🌍 Par Pays"/>
+                            <String fx:value="🏙️ Par Ville"/>
+                        </javafx.collections.FXCollections>
+                    </items>
+                </ComboBox>
+                
+                <ComboBox fx:id="cmbPays" promptText="Pays" 
+                          styleClass="filter-combo" prefWidth="150" onAction="#handleFiltreChange"/>
+                
+                <ComboBox fx:id="cmbSpecialite" promptText="Spécialité" 
+                          styleClass="filter-combo" prefWidth="150" onAction="#handleFiltreChange"/>
+                
+                <ComboBox fx:id="cmbLangue" promptText="Langue" 
+                          styleClass="filter-combo" prefWidth="120" onAction="#handleFiltreChange"/>
+                
+                <Separator orientation="VERTICAL"/>
+                
+                <Button text="🔍 Rechercher" onAction="#handleRechercher" styleClass="btn-action"/>
+                <Button text="🔄 Réinitialiser" onAction="#handleReinitialiser" styleClass="btn-secondary"/>
+                <Button text="📊 Export" onAction="#handleExporter" styleClass="btn-action"/>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <!-- Statistiques rapides -->
+                <HBox spacing="15" styleClass="quick-stats">
+                    <VBox alignment="CENTER" spacing="3">
+                        <Label fx:id="lblTotalEcoles" text="0" styleClass="stat-big">
+                            <font>
+                                <Font name="System Bold" size="20"/>
+                            </font>
+                        </Label>
+                        <Label text="Écoles" styleClass="stat-small"/>
+                    </VBox>
+                    
+                    <Separator orientation="VERTICAL"/>
+                    
+                    <VBox alignment="CENTER" spacing="3">
+                        <Label fx:id="lblTotalStagiaires" text="0" styleClass="stat-big">
+                            <font>
+                                <Font name="System Bold" size="20"/>
+                            </font>
+                        </Label>
+                        <Label text="Stagiaires" styleClass="stat-small"/>
+                    </VBox>
+                </HBox>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- Zone principale -->
+    <center>
+        <HBox spacing="0" HBox.hgrow="ALWAYS">
+            <!-- Carte -->
+            <VBox HBox.hgrow="ALWAYS" styleClass="map-container">
+                <!-- Zone de la carte -->
+                <StackPane fx:id="mapContainer" VBox.vgrow="ALWAYS">
+                    <!-- La carte sera ajoutée ici dynamiquement -->
+                </StackPane>
+                
+                <!-- Contrôles de zoom en bas -->
+                <HBox spacing="10" alignment="CENTER" styleClass="zoom-controls">
+                    <padding>
+                        <Insets top="10" bottom="10"/>
+                    </padding>
+                    
+                    <Button text="🌍" onAction="#zoomMonde" styleClass="zoom-btn">
+                        <tooltip>
+                            <Tooltip text="Vue mondiale"/>
+                        </tooltip>
+                    </Button>
+                    <Button text="🌍" onAction="#zoomAfrique" styleClass="zoom-btn">
+                        <tooltip>
+                            <Tooltip text="Afrique"/>
+                        </tooltip>
+                    </Button>
+                    <Button text="📍" onAction="#zoomCameroun" styleClass="zoom-btn">
+                        <tooltip>
+                            <Tooltip text="Cameroun"/>
+                        </tooltip>
+                    </Button>
+                    
+                    <Separator orientation="VERTICAL"/>
+                    
+                    <Button text="➕" onAction="#zoomIn" styleClass="zoom-btn"/>
+                    <Slider fx:id="sliderZoom" min="0.5" max="10" value="1" 
+                            prefWidth="150" onMouseReleased="#handleZoomSlider"/>
+                    <Button text="➖" onAction="#zoomOut" styleClass="zoom-btn"/>
+                    
+                    <Separator orientation="VERTICAL"/>
+                    
+                    <Label fx:id="lblZoomLevel" text="Zoom: 1.0x" styleClass="zoom-label"/>
+                    
+                    <Region HBox.hgrow="ALWAYS"/>
+                    
+                    <!-- Indicateur de chargement -->
+                    <ProgressIndicator fx:id="progressLoading" prefSize="20" visible="false"/>
+                    <Label fx:id="lblMapInfo" text="Chargement..." styleClass="map-info"/>
+                </HBox>
+            </VBox>
+            
+            <!-- Panneau latéral de détails -->
+            <VBox fx:id="detailsPanel" prefWidth="350" styleClass="details-panel" visible="false">
+                <padding>
+                    <Insets top="15" bottom="15" left="15" right="15"/>
+                </padding>
+                
+                <!-- En-tête du panneau -->
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="📋 Détails" styleClass="panel-title">
+                        <font>
+                            <Font name="System Bold" size="16"/>
+                        </font>
+                    </Label>
+                    
+                    <Region HBox.hgrow="ALWAYS"/>
+                    
+                    <Button text="✕" onAction="#handleFermerDetails" styleClass="btn-close"/>
+                </HBox>
+                
+                <Separator>
+                    <VBox.margin>
+                        <Insets top="10" bottom="10"/>
+                    </VBox.margin>
+                </Separator>
+                
+                <!-- Contenu des détails -->
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="details-scroll">
+                    <VBox fx:id="detailsContent" spacing="15" styleClass="details-content">
+                        <padding>
+                            <Insets top="10" bottom="10"/>
+                        </padding>
+                        
+                        <!-- Le contenu sera ajouté dynamiquement -->
+                    </VBox>
+                </ScrollPane>
+                
+                <!-- Actions sur l'élément -->
+                <HBox spacing="10" alignment="CENTER" styleClass="details-actions">
+                    <VBox.margin>
+                        <Insets top="15"/>
+                    </VBox.margin>
+                    
+                    <Button fx:id="btnModifier" text="✏️ Modifier" onAction="#handleModifier" 
+                            styleClass="btn-action" prefWidth="100"/>
+                    <Button fx:id="btnSupprimer" text="🗑️ Supprimer" onAction="#handleSupprimer" 
+                            styleClass="btn-danger" prefWidth="100"/>
+                    <Button text="📄 Rapport" onAction="#handleGenererRapport" 
+                            styleClass="btn-secondary" prefWidth="100"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+    
+</BorderPane>

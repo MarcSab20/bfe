@@ -6,22 +6,22 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.base.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.controls.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.fxml.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.graphics.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.media.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.swing.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx.web.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/openjfx-22.0.2_linux-x64_bin-sdk/javafx-sdk-22.0.2/lib/javafx-swt.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/jar_files/mysql-connector-j-8.4.0.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/jar_files/ojdbc11.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/bson-4.11.1.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/gson-2.10.1.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/logback-classic-1.4.14.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/logback-core-1.4.14.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/mongodb-driver-core-4.11.1.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/mongodb-driver-sync-4.11.1.jar"/>
-	<classpathentry kind="lib" path="/home/marco/Documents/librairie BFE/slf4j-api-2.0.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/jar_files/mysql-connector-j-8.4.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/jar_files/ojdbc11.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/bson-4.11.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/gson-2.10.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/logback-classic-1.4.14.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/logback-core-1.4.14.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/mongodb-driver-core-4.11.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/mongodb-driver-sync-4.11.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/librairie BFE/slf4j-api-2.0.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.base.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.controls.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.fxml.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.graphics.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.media.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.swing.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx.web.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Marco/Documents/librairie/openjfx/javafx/lib/javafx-swt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

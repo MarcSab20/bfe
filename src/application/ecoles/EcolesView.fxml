@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.String?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="application.views.ecoles.EcolesViewController" 
+            styleClass="ecoles-view">
+    
+    <!-- Barre supérieure -->
+    <top>
+        <VBox spacing="10" styleClass="control-bar">
+            <padding>
+                <Insets top="15" bottom="15" left="20" right="20"/>
+            </padding>
+            
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="🏫 Gestion des Écoles" styleClass="view-title">
+                    <font>
+                        <Font name="System Bold" size="18"/>
+                    </font>
+                </Label>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <Button text="➕ Nouvelle École" onAction="#handleNouvelleEcole" styleClass="btn-primary">
+                    <font>
+                        <Font name="System Bold" size="13"/>
+                    </font>
+                </Button>
+                <Button text="📥 Importer" onAction="#handleImporter" styleClass="btn-action"/>
+                <Button text="📤 Exporter" onAction="#handleExporter" styleClass="btn-action"/>
+            </HBox>
+            
+            <!-- Barre de recherche et filtres -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtRecherche" promptText="🔍 Rechercher une école..." 
+                           prefWidth="300" styleClass="search-field"/>
+                
+                <ComboBox fx:id="cmbType" promptText="Type" prefWidth="150" 
+                          onAction="#handleFiltreChange">
+                    <items>
+                        <javafx.collections.FXCollections fx:factory="observableArrayList">
+                            <String fx:value="Tous les types"/>
+                            <String fx:value="Professionnelle"/>
+                            <String fx:value="Académique"/>
+                        </javafx.collections.FXCollections>
+                    </items>
+                </ComboBox>
+                
+                <ComboBox fx:id="cmbPays" promptText="Pays" prefWidth="150" 
+                          onAction="#handleFiltreChange"/>
+                
+                <CheckBox fx:id="chkPartenaires" text="Partenaires uniquement" 
+                          onAction="#handleFiltreChange"/>
+                
+                <Button text="🔄 Réinitialiser" onAction="#handleReinitialiser" 
+                        styleClass="btn-secondary"/>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <Label fx:id="lblTotal" text="0 école(s)" styleClass="label-total">
+                    <font>
+                        <Font name="System Bold" size="13"/>
+                    </font>
+                </Label>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- Contenu principal -->
+    <center>
+        <SplitPane dividerPositions="0.6">
+            <!-- Liste des écoles -->
+            <VBox styleClass="list-container">
+                <padding>
+                    <Insets top="10" bottom="10" left="10" right="10"/>
+                </padding>
+                
+                <TableView fx:id="tableEcoles" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn text="École" prefWidth="200" fx:id="colNom"/>
+                        <TableColumn text="Type" prefWidth="120" fx:id="colType"/>
+                        <TableColumn text="Pays" prefWidth="120" fx:id="colPays"/>
+                        <TableColumn text="Ville" prefWidth="120" fx:id="colVille"/>
+                        <TableColumn text="Stagiaires" prefWidth="80" fx:id="colStagiaires"/>
+                        <TableColumn text="Partenaire" prefWidth="80" fx:id="colPartenaire"/>
+                        <TableColumn text="Actions" prefWidth="150" fx:id="colActions"/>
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
+                </TableView>
+                
+                <!-- Pagination -->
+                <HBox spacing="10" alignment="CENTER" styleClass="pagination-bar">
+                    <padding>
+                        <Insets top="10"/>
+                    </padding>
+                    
+                    <Button text="◀" onAction="#handlePagePrecedente" styleClass="btn-page"/>
+                    <Label fx:id="lblPage" text="Page 1 / 1"/>
+                    <Button text="▶" onAction="#handlePageSuivante" styleClass="btn-page"/>
+                    
+                    <Separator orientation="VERTICAL"/>
+                    
+                    <Label text="Éléments par page:"/>
+                    <ComboBox fx:id="cmbPageSize" prefWidth="70" onAction="#handlePageSizeChange">
+                        <items>
+                            <javafx.collections.FXCollections fx:factory="observableArrayList">
+                                <String fx:value="10"/>
+                                <String fx:value="25"/>
+                                <String fx:value="50"/>
+                                <String fx:value="100"/>
+                            </javafx.collections.FXCollections>
+                        </items>
+                    </ComboBox>
+                </HBox>
+            </VBox>
+            
+            <!-- Panneau de détails / formulaire -->
+            <VBox styleClass="details-container">
+                <padding>
+                    <Insets top="15" bottom="15" left="15" right="15"/>
+                </padding>
+                
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label fx:id="lblFormTitle" text="📋 Détails de l'École" styleClass="form-title">
+                        <font>
+                            <Font name="System Bold" size="16"/>
+                        </font>
+                    </Label>
+                    
+                    <Region HBox.hgrow="ALWAYS"/>
+                    
+                    <Button fx:id="btnAnnuler" text="✕" onAction="#handleAnnuler" 
+                            styleClass="btn-close" visible="false"/>
+                </HBox>
+                
+                <Separator>
+                    <VBox.margin>
+                        <Insets top="10" bottom="10"/>
+                    </VBox.margin>
+                </Separator>
+                
+                <!-- Formulaire dans ScrollPane -->
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="form-scroll">
+                    <VBox fx:id="formContainer" spacing="15">
+                        <padding>
+                            <Insets top="5"/>
+                        </padding>
+                        
+                        <!-- Informations de base -->
+                        <VBox spacing="10" styleClass="form-section">
+                            <Label text="Informations de base" styleClass="section-label">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <VBox spacing="5">
+                                <Label text="Nom de l'école *" styleClass="field-label"/>
+                                <TextField fx:id="txtNom" promptText="Ex: École Polytechnique"/>
+                            </VBox>
+                            
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Type *" styleClass="field-label"/>
+                                    <ComboBox fx:id="cmbFormType" prefWidth="999">
+                                        <items>
+                                            <javafx.collections.FXCollections fx:factory="observableArrayList">
+                                                <String fx:value="Professionnelle"/>
+                                                <String fx:value="Académique"/>
+                                            </javafx.collections.FXCollections>
+                                        </items>
+                                    </ComboBox>
+                                </VBox>
+                                
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <CheckBox fx:id="chkFormPartenaire" text="École partenaire"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+                        
+                        <!-- Localisation -->
+                        <VBox spacing="10" styleClass="form-section">
+                            <Label text="Localisation" styleClass="section-label">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Pays *" styleClass="field-label"/>
+                                    <ComboBox fx:id="cmbFormPays" prefWidth="999" editable="true"/>
+                                </VBox>
+                                
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Ville *" styleClass="field-label"/>
+                                    <TextField fx:id="txtVille" promptText="Ex: Yaoundé"/>
+                                </VBox>
+                            </HBox>
+                            
+                            <VBox spacing="5">
+                                <Label text="Adresse" styleClass="field-label"/>
+                                <TextArea fx:id="txtAdresse" prefRowCount="2" 
+                                         promptText="Adresse complète"/>
+                            </VBox>
+                            
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Latitude" styleClass="field-label"/>
+                                    <TextField fx:id="txtLatitude" promptText="Ex: 3.8480"/>
+                                </VBox>
+                                
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Longitude" styleClass="field-label"/>
+                                    <TextField fx:id="txtLongitude" promptText="Ex: 11.5021"/>
+                                </VBox>
+                                
+                                <Button text="📍 Carte" onAction="#handleLocaliserCarte" 
+                                        styleClass="btn-secondary"/>
+                            </HBox>
+                        </VBox>
+                        
+                        <!-- Contact -->
+                        <VBox spacing="10" styleClass="form-section">
+                            <Label text="Informations de contact" styleClass="section-label">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <VBox spacing="5">
+                                <Label text="Personne contact" styleClass="field-label"/>
+                                <TextField fx:id="txtContact" promptText="Nom du contact"/>
+                            </VBox>
+                            
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Email" styleClass="field-label"/>
+                                    <TextField fx:id="txtEmail" promptText="contact@ecole.com"/>
+                                </VBox>
+                                
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Téléphone" styleClass="field-label"/>
+                                    <TextField fx:id="txtTelephone" promptText="+237 XXX XXX XXX"/>
+                                </VBox>
+                            </HBox>
+                            
+                            <VBox spacing="5">
+                                <Label text="Site Web" styleClass="field-label"/>
+                                <TextField fx:id="txtSiteWeb" promptText="https://www.ecole.com"/>
+                            </VBox>
+                        </VBox>
+                        
+                        <!-- Description -->
+                        <VBox spacing="10" styleClass="form-section">
+                            <Label text="Description" styleClass="section-label">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <VBox spacing="5">
+                                <Label text="Spécialités (séparées par des virgules)" styleClass="field-label"/>
+                                <TextArea fx:id="txtSpecialites" prefRowCount="2" 
+                                         promptText="Ex: Génie Informatique, Électronique, Mécanique"/>
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label text="Description" styleClass="field-label"/>
+                                <TextArea fx:id="txtDescription" prefRowCount="3" 
+                                         promptText="Description générale de l'école"/>
+                            </VBox>
+                        </VBox>
+                        
+                        <!-- Boutons d'action -->
+                        <HBox spacing="10" alignment="CENTER" styleClass="form-actions">
+                            <VBox.margin>
+                                <Insets top="10"/>
+                            </VBox.margin>
+                            
+                            <Button fx:id="btnEnregistrer" text="💾 Enregistrer" 
+                                    onAction="#handleEnregistrer" styleClass="btn-primary" 
+                                    prefWidth="150">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Button>
+                            
+                            <Button fx:id="btnSupprimer" text="🗑️ Supprimer" 
+                                    onAction="#handleSupprimer" styleClass="btn-danger" 
+                                    prefWidth="150" visible="false"/>
+                            
+                            <Button text="↺ Réinitialiser" onAction="#handleReinitialiserForm" 
+                                    styleClass="btn-secondary" prefWidth="150"/>
+                        </HBox>
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+        </SplitPane>
+    </center>
+    
+</BorderPane>
