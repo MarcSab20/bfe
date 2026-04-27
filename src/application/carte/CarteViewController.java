@@ -51,6 +51,12 @@ public class CarteViewController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         carte = new OfflineMapView();
+
+        // La WebView doit occuper tout l'espace disponible
+        carte.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        HBox.setHgrow(carte, Priority.ALWAYS);
+        VBox.setVgrow(carte, Priority.ALWAYS);
+
         if (mapContainer != null) mapContainer.getChildren().add(carte);
 
         carte.setMarkerClickListener(this::handleMarkerClick);
@@ -59,8 +65,10 @@ public class CarteViewController implements Initializable {
         if (cmbTypeAffichage != null) cmbTypeAffichage.getSelectionModel().selectFirst();
 
         if (sliderZoom != null) {
-            sliderZoom.valueProperty().addListener((obs, old, nv) ->
-                { if (lblZoomLevel != null) lblZoomLevel.setText(String.format("Zoom: %.1fx", nv.doubleValue())); });
+            sliderZoom.valueProperty().addListener((obs, old, nv) -> {
+                if (lblZoomLevel != null)
+                    lblZoomLevel.setText(String.format("Zoom: %.1fx", nv.doubleValue()));
+            });
         }
 
         chargerDonnees();
@@ -68,6 +76,8 @@ public class CarteViewController implements Initializable {
 
         if (lblConnexion != null) lblConnexion.setStyle("-fx-text-fill: #27ae60;");
     }
+
+    // ------------------------------------------------------------------ filtres
 
     private void chargerFiltres() {
         try {
@@ -82,6 +92,8 @@ public class CarteViewController implements Initializable {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
+    // ------------------------------------------------------------------ chargement données
+
     private void chargerDonnees() {
         if (progressLoading != null) progressLoading.setVisible(true);
         if (lblMapInfo != null) lblMapInfo.setText("Chargement…");
@@ -94,7 +106,10 @@ public class CarteViewController implements Initializable {
                 String lang = cmbLangue    != null ? cmbLangue.getValue()    : null;
 
                 if (type != null && type.contains("Stagiaires")) chargerStagiaires(pays, spec, lang);
-                else if (type != null && type.contains("Écoles")) chargerEcoles(type, pays, spec);
+                else if (type != null && (type.contains("Professionnelles")
+                                       || type.contains("Académiques")
+                                       || type.contains("Partenaires")))
+                    chargerEcoles(type, pays, spec);
                 else chargerTout();
 
                 Platform.runLater(() -> {
@@ -103,35 +118,55 @@ public class CarteViewController implements Initializable {
                 });
             } catch (Exception e) {
                 e.printStackTrace();
-                Platform.runLater(() -> { if (progressLoading != null) progressLoading.setVisible(false); });
+                Platform.runLater(() -> {
+                    if (progressLoading != null) progressLoading.setVisible(false);
+                });
             }
         }).start();
     }
 
     private void chargerTout() {
-        carte.clearMarkers();
+        Platform.runLater(() -> carte.clearMarkers());
+
         ecolesCourantes = ecoleService.getToutesEcoles();
-        for (Ecole ecole : ecolesCourantes) {
-            if (ecole.getLatitude() != null && ecole.getLongitude() != null)
-                carte.addMarker(ecole.getLatitude(), ecole.getLongitude(),
-                    ecole.getNom(), "ecole", ecole.getId(), couleurEcole(ecole));
-        }
         stagiairesCourants = stagiaireService.getStagiairesActifs();
+
+        for (Ecole ecole : ecolesCourantes) {
+            if (ecole.getLatitude() != null && ecole.getLongitude() != null) {
+                final Ecole e = ecole;
+                Platform.runLater(() ->
+                    carte.addMarker(e.getLatitude(), e.getLongitude(),
+                        e.getNom(), "ecole", e.getId(), couleurEcole(e)));
+            }
+        }
+
         for (Stagiaire s : stagiairesCourants) {
             StageFormation sf = stageService.getStageActifByStagiaire(s.getId());
             if (sf != null && sf.getEcole() != null
-                    && sf.getEcole().getLatitude() != null && sf.getEcole().getLongitude() != null)
-                carte.addMarker(sf.getEcole().getLatitude(), sf.getEcole().getLongitude(),
-                    s.getNomComplet(), "stagiaire", s.getId(), Color.web("#3498db"));
+                    && sf.getEcole().getLatitude() != null
+                    && sf.getEcole().getLongitude() != null) {
+                final Stagiaire st = s;
+                final StageFormation sfFinal = sf;
+                Platform.runLater(() ->
+                    carte.addMarker(
+                        sfFinal.getEcole().getLatitude(),
+                        sfFinal.getEcole().getLongitude(),
+                        st.getNomComplet(), "stagiaire", st.getId(),
+                        Color.web("#3498db")));
+            }
         }
+
         int ne = ecolesCourantes.size(), ns = stagiairesCourants.size();
-        Platform.runLater(() -> { if (lblMapInfo != null) lblMapInfo.setText(ne + " écoles, " + ns + " stagiaires"); });
+        Platform.runLater(() -> {
+            if (lblMapInfo != null)
+                lblMapInfo.setText(ne + " école(s), " + ns + " stagiaire(s)");
+        });
     }
 
     private void chargerEcoles(String typeAffichage, String pays, String specialite) {
-        carte.clearMarkers();
-        List<Ecole> ecoles = ecoleService.getToutesEcoles();
+        Platform.runLater(() -> carte.clearMarkers());
 
+        List<Ecole> ecoles = ecoleService.getToutesEcoles();
         if (typeAffichage.contains("Professionnelles"))
             ecoles = ecoles.stream().filter(e -> "Professionnelle".equals(e.getType())).collect(Collectors.toList());
         else if (typeAffichage.contains("Académiques"))
@@ -142,28 +177,38 @@ public class CarteViewController implements Initializable {
         if (pays != null && !pays.isEmpty())
             ecoles = ecoles.stream().filter(e -> pays.equals(e.getPays())).collect(Collectors.toList());
         if (specialite != null && !specialite.isEmpty())
-            ecoles = ecoles.stream().filter(e -> e.getSpecialites() != null && e.getSpecialites().contains(specialite))
-                           .collect(Collectors.toList());
+            ecoles = ecoles.stream()
+                .filter(e -> e.getSpecialites() != null && e.getSpecialites().contains(specialite))
+                .collect(Collectors.toList());
 
         ecolesCourantes = ecoles;
         stagiairesCourants.clear();
 
-        for (Ecole e : ecoles)
-            if (e.getLatitude() != null && e.getLongitude() != null)
-                carte.addMarker(e.getLatitude(), e.getLongitude(), e.getNom(), "ecole", e.getId(), couleurEcole(e));
+        for (Ecole e : ecoles) {
+            if (e.getLatitude() != null && e.getLongitude() != null) {
+                final Ecole ef = e;
+                Platform.runLater(() ->
+                    carte.addMarker(ef.getLatitude(), ef.getLongitude(),
+                        ef.getNom(), "ecole", ef.getId(), couleurEcole(ef)));
+            }
+        }
 
         int n = ecoles.size();
-        Platform.runLater(() -> { if (lblMapInfo != null) lblMapInfo.setText(n + " école(s)"); });
+        Platform.runLater(() -> {
+            if (lblMapInfo != null) lblMapInfo.setText(n + " école(s)");
+        });
     }
 
     private void chargerStagiaires(String pays, String specialite, String langue) {
-        carte.clearMarkers();
-        List<Stagiaire> stagiaires = stagiaireService.getStagiairesActifs();
+        Platform.runLater(() -> carte.clearMarkers());
 
+        List<Stagiaire> stagiaires = stagiaireService.getStagiairesActifs();
         if (specialite != null && !specialite.isEmpty())
-            stagiaires = stagiaires.stream().filter(s -> specialite.equals(s.getSpecialite())).collect(Collectors.toList());
+            stagiaires = stagiaires.stream()
+                .filter(s -> specialite.equals(s.getSpecialite())).collect(Collectors.toList());
         if (langue != null && !langue.isEmpty())
-            stagiaires = stagiaires.stream().filter(s -> langue.equals(s.getLangue())).collect(Collectors.toList());
+            stagiaires = stagiaires.stream()
+                .filter(s -> langue.equals(s.getLangue())).collect(Collectors.toList());
 
         stagiairesCourants = stagiaires;
         ecolesCourantes.clear();
@@ -173,14 +218,23 @@ public class CarteViewController implements Initializable {
             if (sf != null && sf.getEcole() != null) {
                 Ecole e = sf.getEcole();
                 if (pays != null && !pays.isEmpty() && !pays.equals(e.getPays())) continue;
-                if (e.getLatitude() != null && e.getLongitude() != null)
-                    carte.addMarker(e.getLatitude(), e.getLongitude(),
-                        s.getNomComplet(), "stagiaire", s.getId(), Color.web("#3498db"));
+                if (e.getLatitude() != null && e.getLongitude() != null) {
+                    final Stagiaire st = s;
+                    final double lat = e.getLatitude(), lon = e.getLongitude();
+                    Platform.runLater(() ->
+                        carte.addMarker(lat, lon, st.getNomComplet(),
+                            "stagiaire", st.getId(), Color.web("#3498db")));
+                }
             }
         }
+
         int n = stagiaires.size();
-        Platform.runLater(() -> { if (lblMapInfo != null) lblMapInfo.setText(n + " stagiaire(s)"); });
+        Platform.runLater(() -> {
+            if (lblMapInfo != null) lblMapInfo.setText(n + " stagiaire(s)");
+        });
     }
+
+    // ------------------------------------------------------------------ utilitaires
 
     private Color couleurEcole(Ecole e) {
         if (e.getType() == null) return Color.web("#e74c3c");
@@ -198,6 +252,8 @@ public class CarteViewController implements Initializable {
         });
     }
 
+    // ------------------------------------------------------------------ callbacks carte
+
     private void handleMarkerClick(OfflineMapView.MapMarker marker) {
         Platform.runLater(() -> {
             if ("ecole".equals(marker.type)) {
@@ -210,6 +266,8 @@ public class CarteViewController implements Initializable {
         });
     }
 
+    // ------------------------------------------------------------------ panneau détails
+
     private void afficherDetailsEcole(Ecole ecole) {
         elementSelectionne = ecole;
         if (detailsContent == null) return;
@@ -218,16 +276,28 @@ public class CarteViewController implements Initializable {
         Label titre = new Label(ecole.getNom());
         titre.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        Label badge = new Label(ecole.getType() != null ? ecole.getType() : "");
-        badge.setStyle("-fx-background-color: " + couleurHex(ecole) +
+        String hexColor = couleurHex(ecole);
+        Label badge = new Label(ecole.getType() != null ? ecole.getType() : "École");
+        badge.setStyle("-fx-background-color: " + hexColor +
                        "; -fx-text-fill: white; -fx-padding: 4 10; -fx-background-radius: 4;");
 
         HBox header = new HBox(10, titre, badge);
 
         VBox infos = new VBox(8,
-            ligne("Pays", ecole.getPays()), ligne("Ville", ecole.getVille()),
-            ligne("Email", ecole.getEmail()), ligne("Tél.", ecole.getTelephone()),
-            ligne("Contact", ecole.getContact()), ligne("Site", ecole.getSiteWeb()));
+            ligne("Pays",    ecole.getPays()),
+            ligne("Ville",   ecole.getVille()),
+            ligne("Email",   ecole.getEmail()),
+            ligne("Tél.",    ecole.getTelephone()),
+            ligne("Contact", ecole.getContact()),
+            ligne("Site",    ecole.getSiteWeb()));
+
+        if (ecole.getLatitude() != null && ecole.getLongitude() != null) {
+            infos.getChildren().add(ligne("Coords",
+                ecole.getLatitude().toString().substring(0, Math.min(7, ecole.getLatitude().toString().length()))
+                + "°, "
+                + ecole.getLongitude().toString().substring(0, Math.min(7, ecole.getLongitude().toString().length()))
+                + "°"));
+        }
 
         int nb = stagiaireService.compterStagiairesParEcole(ecole.getId());
         Label lblNb = new Label("Stagiaires en cours : " + nb);
@@ -245,22 +315,25 @@ public class CarteViewController implements Initializable {
         Label titre = new Label(stagiaire.getNomComplet());
         titre.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        Label badge = new Label(stagiaire.getMatricule() != null ? stagiaire.getMatricule() : "");
+        Label badge = new Label(stagiaire.getMatricule() != null ? stagiaire.getMatricule() : "Stagiaire");
         badge.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 4 10; -fx-background-radius: 4;");
 
         HBox header = new HBox(10, titre, badge);
 
         VBox infos = new VBox(8,
             ligne("Spécialité", stagiaire.getSpecialite()),
-            ligne("Langue", stagiaire.getLangue()),
-            ligne("Email", stagiaire.getEmail()),
-            ligne("Tél.", stagiaire.getTelephone()),
-            ligne("Formation", stagiaire.getTypeFormation()));
+            ligne("Langue",     stagiaire.getLangue()),
+            ligne("Email",      stagiaire.getEmail()),
+            ligne("Tél.",       stagiaire.getTelephone()),
+            ligne("Formation",  stagiaire.getTypeFormation()));
 
         StageFormation sf = stageService.getStageActifByStagiaire(stagiaire.getId());
         VBox stageBox = new VBox(8);
         stageBox.setStyle("-fx-background-color: #e8f5e9; -fx-padding: 10; -fx-background-radius: 5;");
-        stageBox.getChildren().add(new Label("Stage actif"));
+
+        Label stageTitle = new Label("Stage actif");
+        stageTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #27ae60;");
+        stageBox.getChildren().add(stageTitle);
 
         if (sf != null) {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -269,7 +342,8 @@ public class CarteViewController implements Initializable {
                 ligne("Pays",  sf.getEcole() != null ? sf.getEcole().getPays() : "N/A"),
                 ligne("Début", sf.getDateDebut() != null ? sf.getDateDebut().format(fmt) : "N/A"),
                 ligne("Fin",   sf.getDateFin()   != null ? sf.getDateFin().format(fmt)   : "N/A"),
-                ligne("Statut", sf.getStatut()));
+                ligne("Statut", sf.getStatut()),
+                ligne("Jours restants", sf.getJoursRestants() + " jours"));
         } else {
             stageBox.getChildren().add(new Label("Aucun stage actif"));
         }
@@ -279,9 +353,12 @@ public class CarteViewController implements Initializable {
     }
 
     private HBox ligne(String label, String valeur) {
-        Label l = new Label(label + " :"); l.setStyle("-fx-font-weight: bold; -fx-min-width: 100;");
-        Label v = new Label(valeur != null ? valeur : "N/A"); v.setWrapText(true);
-        HBox h = new HBox(8, l, v); h.setPadding(new Insets(0));
+        Label l = new Label(label + " :");
+        l.setStyle("-fx-font-weight: bold; -fx-min-width: 100;");
+        Label v = new Label(valeur != null ? valeur : "N/A");
+        v.setWrapText(true);
+        HBox h = new HBox(8, l, v);
+        h.setPadding(new Insets(0));
         return h;
     }
 
@@ -293,8 +370,8 @@ public class CarteViewController implements Initializable {
 
     // ------------------------------------------------------------------ actions FXML
 
-    @FXML private void handleFiltreChange()  { chargerDonnees(); }
-    @FXML private void handleRechercher()    { chargerDonnees(); }
+    @FXML private void handleFiltreChange() { chargerDonnees(); }
+    @FXML private void handleRechercher()   { chargerDonnees(); }
 
     @FXML private void handleReinitialiser() {
         if (cmbTypeAffichage != null) cmbTypeAffichage.getSelectionModel().selectFirst();
@@ -304,10 +381,12 @@ public class CarteViewController implements Initializable {
         chargerDonnees();
     }
 
-    @FXML private void handleExporter() { afficherInfo("Export", "Export (PDF / Excel / CSV) en développement."); }
+    @FXML private void handleExporter() {
+        afficherInfo("Export", "Export (PDF / Excel / CSV) en développement.");
+    }
 
-    @FXML private void zoomMonde()    { carte.centerOn(20, 0, 0.8);      maj(0.8); }
-    @FXML private void zoomAfrique()  { carte.centerOn(0, 20, 1.5);      maj(1.5); }
+    @FXML private void zoomMonde()    { carte.centerOn(20,  0,    0.8); maj(0.8); }
+    @FXML private void zoomAfrique()  { carte.centerOn( 0, 20,    1.5); maj(1.5); }
     @FXML private void zoomCameroun() { carte.centerOn(7.3697, 12.3547, 4.0); maj(4.0); }
 
     @FXML private void zoomIn() {
@@ -345,18 +424,21 @@ public class CarteViewController implements Initializable {
             if (r == ButtonType.YES) {
                 boolean ok = false;
                 if (elementSelectionne instanceof Ecole)
-                    ok = new application.ecoles.EcoleService().supprimerEcole(((Ecole) elementSelectionne).getId());
+                    ok = new EcoleService().supprimerEcole(((Ecole) elementSelectionne).getId());
                 else if (elementSelectionne instanceof Stagiaire)
-                    ok = new application.stagiaires.StagiaireService()
+                    ok = new StagiaireService()
                             .supprimerStagiaire(((Stagiaire) elementSelectionne).getId());
                 if (ok) { handleFermerDetails(); chargerDonnees(); }
             }
         });
     }
 
-    @FXML private void handleGenererRapport() { afficherInfo("Rapport", "Génération de rapport en développement."); }
+    @FXML private void handleGenererRapport() {
+        afficherInfo("Rapport", "Génération de rapport en développement.");
+    }
 
     private void afficherInfo(String titre, String msg) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, msg); a.setTitle(titre); a.setHeaderText(null); a.showAndWait();
+        Alert a = new Alert(Alert.AlertType.INFORMATION, msg);
+        a.setTitle(titre); a.setHeaderText(null); a.showAndWait();
     }
 }
